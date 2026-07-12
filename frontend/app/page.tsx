@@ -1037,7 +1037,7 @@ export default function Home() {
                   style={{ borderBottom: "1px solid var(--border-subtle)" }}
                 >
                   <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                    {(currentUser.role === 'driver' || currentUser.role === 'dispatcher') ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
+                    {currentUser.role === 'driver' ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
                   </h3>
                   {isTabAllowed("trips") && (
                     <button

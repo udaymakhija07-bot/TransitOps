@@ -10,7 +10,7 @@ router.get('/dashboard/kpis', async (req, res) => {
     if (req.user.role === 'driver' || req.user.role === 'dispatcher' || req.user.role === 'safety') {
       // Just return own stats or restricted stats
       let tripWhere = {};
-      if (req.user.role === 'driver' || req.user.role === 'dispatcher') {
+      if (req.user.role === 'driver') {
         tripWhere = { driver: { name: req.user.name } };
       }
       const recentTrips = await prisma.trip.findMany({
@@ -310,7 +310,7 @@ router.get('/trips', async (req, res) => {
   try {
     let whereClause = {};
     // Driver sees only trips where driver name matches user name
-    if (req.user.role === 'driver' || req.user.role === 'dispatcher') {
+    if (req.user.role === 'driver') {
       whereClause = {
         driver: {
           name: req.user.name
