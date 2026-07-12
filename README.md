@@ -1,6 +1,6 @@
 # TransitOps
+
 TransitOps - Smart Transport Operations Platform for fleet, driver, trip, maintenance, fuel, expense, and analytics management.
-# TransitOps
 
 A modern Transport Operations Platform designed to streamline fleet, driver, trip, maintenance, fuel, and expense management through a centralized dashboard. The system focuses on operational efficiency, business rule enforcement, and real-time analytics.
 
