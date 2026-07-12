@@ -1,0 +1,21 @@
+# Dependencies
+**/node_modules
+
+# Next.js
+frontend/.next
+
+# Environment
+**/.env
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Build
+dist
+build
+
+# Prisma
+backend/prisma/dev.db
