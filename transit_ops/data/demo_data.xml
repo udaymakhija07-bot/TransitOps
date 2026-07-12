@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ==================== VEHICLES ==================== -->
+        <record id="vehicle_1" model="transitops.vehicle">
+            <field name="name">Volvo FH16 Heavy Truck</field>
+            <field name="registration_number">MH-12-TR-9991</field>
+            <field name="vehicle_type">truck</field>
+            <field name="max_load_capacity">25000</field>
+            <field name="odometer">45200.0</field>
+            <field name="acquisition_cost">120000.0</field>
+            <field name="status">available</field>
+            <field name="region">West Region</field>
+            <field name="revenue">15000.0</field>
+        </record>
+
+        <record id="vehicle_2" model="transitops.vehicle">
+            <field name="name">Ford Transit Delivery Van</field>
+            <field name="registration_number">MH-12-TR-9992</field>
+            <field name="vehicle_type">van</field>
+            <field name="max_load_capacity">3500</field>
+            <field name="odometer">12800.0</field>
+            <field name="acquisition_cost">35000.0</field>
+            <field name="status">available</field>
+            <field name="region">North Region</field>
+            <field name="revenue">4200.0</field>
+        </record>
+
+        <record id="vehicle_3" model="transitops.vehicle">
+            <field name="name">Mercedes Benz Sprinter</field>
+            <field name="registration_number">MH-12-TR-9993</field>
+            <field name="vehicle_type">van</field>
+            <field name="max_load_capacity">4000</field>
+            <field name="odometer">8520.0</field>
+            <field name="acquisition_cost">42000.0</field>
+            <field name="status">on_trip</field>
+            <field name="region">East Region</field>
+            <field name="revenue">800.0</field>
+        </record>
+
+        <record id="vehicle_4" model="transitops.vehicle">
+            <field name="name">Scania R500 Hauler</field>
+            <field name="registration_number">MH-12-TR-9994</field>
+            <field name="vehicle_type">truck</field>
+            <field name="max_load_capacity">30000</field>
+            <field name="odometer">95400.0</field>
+            <field name="acquisition_cost">145000.0</field>
+            <field name="status">in_shop</field>
+            <field name="region">South Region</field>
+            <field name="revenue">0.0</field>
+        </record>
+
+        <record id="vehicle_5" model="transitops.vehicle">
+            <field name="name">Suzuki Super Carry</field>
+            <field name="registration_number">MH-12-TR-9995</field>
+            <field name="vehicle_type">van</field>
+            <field name="max_load_capacity">1200</field>
+            <field name="odometer">65800.0</field>
+            <field name="acquisition_cost">12000.0</field>
+            <field name="status">retired</field>
+            <field name="region">West Region</field>
+            <field name="revenue">0.0</field>
+        </record>
+
+        <record id="vehicle_6" model="transitops.vehicle">
+            <field name="name">Yamaha Crux Cargo Bike</field>
+            <field name="registration_number">MH-12-TR-9996</field>
+            <field name="vehicle_type">bike</field>
+            <field name="max_load_capacity">250</field>
+            <field name="odometer">2450.0</field>
+            <field name="acquisition_cost">2200.0</field>
+            <field name="status">available</field>
+            <field name="region">City Center</field>
+            <field name="revenue">450.0</field>
+        </record>
+
+        <!-- ==================== DRIVERS ==================== -->
+        <record id="driver_1" model="transitops.driver">
+            <field name="name">Rajesh Kumar</field>
+            <field name="license_number">DL-1420190001</field>
+            <field name="license_category">Heavy Commercial (HCV)</field>
+            <field name="license_expiry_date" eval="(datetime.now() + relativedelta(years=2)).strftime('%Y-%m-%d')"/>
+            <field name="contact_number">+91 98765 43210</field>
+            <field name="safety_score">94.5</field>
+            <field name="status">available</field>
+        </record>
+
+        <record id="driver_2" model="transitops.driver">
+            <field name="name">Amit Singh</field>
+            <field name="license_number">DL-1420190002</field>
+            <field name="license_category">Light Commercial (LCV)</field>
+            <field name="license_expiry_date" eval="(datetime.now() + relativedelta(years=1)).strftime('%Y-%m-%d')"/>
+            <field name="contact_number">+91 98765 43211</field>
+            <field name="safety_score">88.0</field>
+            <field name="status">on_trip</field>
+        </record>
+
+        <record id="driver_3" model="transitops.driver">
+            <field name="name">John Miller (Expiring License)</field>
+            <field name="license_number">DL-1420190003</field>
+            <field name="license_category">Commercial Vehicle</field>
+            <field name="license_expiry_date" eval="(datetime.now() + relativedelta(days=10)).strftime('%Y-%m-%d')"/>
+            <field name="contact_number">+91 98765 43212</field>
+            <field name="safety_score">92.0</field>
+            <field name="status">available</field>
+        </record>
+
+        <record id="driver_4" model="transitops.driver">
+            <field name="name">Devendra Patil (Suspended)</field>
+            <field name="license_number">DL-1420190004</field>
+            <field name="license_category">Heavy Transport</field>
+            <field name="license_expiry_date" eval="(datetime.now() + relativedelta(years=3)).strftime('%Y-%m-%d')"/>
+            <field name="contact_number">+91 98765 43213</field>
+            <field name="safety_score">45.0</field>
+            <field name="status">suspended</field>
+        </record>
+
+        <record id="driver_5" model="transitops.driver">
+            <field name="name">Vikram Rathore</field>
+            <field name="license_number">DL-1420190005</field>
+            <field name="license_category">Light Motor Vehicle</field>
+            <field name="license_expiry_date" eval="(datetime.now() + relativedelta(months=6)).strftime('%Y-%m-%d')"/>
+            <field name="contact_number">+91 98765 43214</field>
+            <field name="safety_score">99.0</field>
+            <field name="status">off_duty</field>
+        </record>
+
+        <!-- ==================== TRIPS ==================== -->
+        <record id="trip_completed" model="transitops.trip">
+            <field name="source">Mumbai Warehouse</field>
+            <field name="destination">Pune Distribution Center</field>
+            <field name="vehicle_id" ref="vehicle_1"/>
+            <field name="driver_id" ref="driver_1"/>
+            <field name="cargo_weight">12000.0</field>
+            <field name="planned_distance">150.0</field>
+            <field name="actual_distance">152.0</field>
+            <field name="fuel_consumed">38.0</field>
+            <field name="state">completed</field>
+            <field name="dispatch_date" eval="(datetime.now() - relativedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="completion_date" eval="(datetime.now() - relativedelta(days=2, hours=4)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <record id="trip_dispatched" model="transitops.trip">
+            <field name="source">East Warehouse</field>
+            <field name="destination">Kolkata Hub</field>
+            <field name="vehicle_id" ref="vehicle_3"/>
+            <field name="driver_id" ref="driver_2"/>
+            <field name="cargo_weight">2200.0</field>
+            <field name="planned_distance">350.0</field>
+            <field name="state">dispatched</field>
+            <field name="dispatch_date" eval="datetime.now().strftime('%Y-%m-%d %H:%M:%S')"/>
+        </record>
+
+        <record id="trip_draft" model="transitops.trip">
+            <field name="source">City Distribution</field>
+            <field name="destination">Local Stores</field>
+            <field name="vehicle_id" ref="vehicle_6"/>
+            <field name="driver_id" ref="driver_3"/>
+            <field name="cargo_weight">180.0</field>
+            <field name="planned_distance">25.0</field>
+            <field name="state">draft</field>
+        </record>
+
+        <record id="trip_cancelled" model="transitops.trip">
+            <field name="source">North Warehouse</field>
+            <field name="destination">Delhi Terminal</field>
+            <field name="vehicle_id" ref="vehicle_2"/>
+            <field name="driver_id" ref="driver_5"/>
+            <field name="cargo_weight">2900.0</field>
+            <field name="planned_distance">180.0</field>
+            <field name="state">cancelled</field>
+        </record>
+
+        <!-- ==================== MAINTENANCE ==================== -->
+        <record id="maint_active" model="transitops.maintenance">
+            <field name="vehicle_id" ref="vehicle_4"/>
+            <field name="maintenance_type">Engine Overhaul &amp; Brake replacement</field>
+            <field name="cost">4500.0</field>
+            <field name="date" eval="datetime.now().strftime('%Y-%m-%d')"/>
+            <field name="status">active</field>
+            <field name="notes">Severe engine knock reported. Replacing cylinder head seals and brake pads.</field>
+        </record>
+
+        <!-- ==================== FUEL LOGS ==================== -->
+        <record id="fuel_log_1" model="transitops.fuel.log">
+            <field name="vehicle_id" ref="vehicle_1"/>
+            <field name="trip_id" ref="trip_completed"/>
+            <field name="liters">38.0</field>
+            <field name="cost">57.0</field>
+            <field name="date" eval="(datetime.now() - relativedelta(days=2)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="fuel_log_2" model="transitops.fuel.log">
+            <field name="vehicle_id" ref="vehicle_2"/>
+            <field name="liters">45.0</field>
+            <field name="cost">67.5</field>
+            <field name="date" eval="datetime.now().strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- ==================== EXPENSES ==================== -->
+        <record id="expense_1" model="transitops.expense">
+            <field name="vehicle_id" ref="vehicle_1"/>
+            <field name="expense_type">toll</field>
+            <field name="amount">25.0</field>
+            <field name="date" eval="(datetime.now() - relativedelta(days=2)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="expense_2" model="transitops.expense">
+            <field name="vehicle_id" ref="vehicle_3"/>
+            <field name="expense_type">other</field>
+            <field name="amount">15.0</field>
+            <field name="date" eval="datetime.now().strftime('%Y-%m-%d')"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_maintenance_tree" model="ir.ui.view">
+        <field name="name">transitops.maintenance.tree</field>
+        <field name="model">transitops.maintenance</field>
+        <field name="arch" type="xml">
+            <tree string="Maintenance Logs">
+                <field name="vehicle_id"/>
+                <field name="maintenance_type"/>
+                <field name="date"/>
+                <field name="cost" widget="monetary" options="{'currency_field': 'currency_id'}"
+                       groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+                <field name="status" widget="badge"
+                       decoration-warning="status == 'active'"
+                       decoration-success="status == 'closed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_maintenance_form" model="ir.ui.view">
+        <field name="name">transitops.maintenance.form</field>
+        <field name="model">transitops.maintenance</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Log">
+                <sheet>
+                    <group>
+                        <group string="Service Details">
+                            <field name="vehicle_id" options="{'no_create': True}"/>
+                            <field name="maintenance_type"/>
+                            <field name="date"/>
+                        </group>
+                        <group string="Status &amp; Costs">
+                            <field name="status"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="cost" widget="monetary" options="{'currency_field': 'currency_id'}"
+                                   groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+                        </group>
+                    </group>
+                    <group string="Technician / Service Notes">
+                        <field name="notes" placeholder="Describe the maintenance findings, replacement parts, etc." nolabel="1"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_maintenance_search" model="ir.ui.view">
+        <field name="name">transitops.maintenance.search</field>
+        <field name="model">transitops.maintenance</field>
+        <field name="arch" type="xml">
+            <search string="Search Maintenance">
+                <field name="vehicle_id"/>
+                <field name="maintenance_type"/>
+                <separator/>
+                <filter string="Active" name="active" domain="[('status', '=', 'active')]"/>
+                <filter string="Closed" name="closed" domain="[('status', '=', 'closed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_by_status" context="{'group_by': 'status'}"/>
+                    <filter string="Vehicle" name="group_by_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_transitops_maintenance" model="ir.actions.act_window">
+        <field name="name">Maintenance Logs</field>
+        <field name="res_model">transitops.maintenance</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_maintenance_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Log a new vehicle maintenance record.
+            </p>
+        </field>
+    </record>
+</odoo>

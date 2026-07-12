@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ==================== FUEL LOG VIEWS ==================== -->
+    <!-- List View -->
+    <record id="view_fuel_log_tree" model="ir.ui.view">
+        <field name="name">transitops.fuel.log.tree</field>
+        <field name="model">transitops.fuel.log</field>
+        <field name="arch" type="xml">
+            <tree string="Fuel Logs">
+                <field name="vehicle_id"/>
+                <field name="trip_id"/>
+                <field name="liters"/>
+                <field name="cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fuel_log_form" model="ir.ui.view">
+        <field name="name">transitops.fuel.log.form</field>
+        <field name="model">transitops.fuel.log</field>
+        <field name="arch" type="xml">
+            <form string="Fuel Log">
+                <sheet>
+                    <group>
+                        <group string="Vehicle &amp; Trip">
+                            <field name="vehicle_id" options="{'no_create': True}"/>
+                            <field name="trip_id" options="{'no_create': True}"/>
+                        </group>
+                        <group string="Log details">
+                            <field name="liters"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_transitops_fuel_log" model="ir.actions.act_window">
+        <field name="name">Fuel Logs</field>
+        <field name="res_model">transitops.fuel.log</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Log fuel fill-up logs for your fleet!
+            </p>
+        </field>
+    </record>
+
+    <!-- ==================== EXPENSE VIEWS ==================== -->
+    <!-- List View -->
+    <record id="view_expense_tree" model="ir.ui.view">
+        <field name="name">transitops.expense.tree</field>
+        <field name="model">transitops.expense</field>
+        <field name="arch" type="xml">
+            <tree string="Expenses">
+                <field name="vehicle_id"/>
+                <field name="expense_type"/>
+                <field name="amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_expense_form" model="ir.ui.view">
+        <field name="name">transitops.expense.form</field>
+        <field name="model">transitops.expense</field>
+        <field name="arch" type="xml">
+            <form string="Expense Log">
+                <sheet>
+                    <group>
+                        <group string="Vehicle">
+                            <field name="vehicle_id" options="{'no_create': True}"/>
+                        </group>
+                        <group string="Expense Details">
+                            <field name="expense_type"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_transitops_expense" model="ir.actions.act_window">
+        <field name="name">Expenses</field>
+        <field name="res_model">transitops.expense</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record toll fees or other operational expenses.
+            </p>
+        </field>
+    </record>
+</odoo>

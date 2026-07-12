@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_vehicle_tree" model="ir.ui.view">
+        <field name="name">transitops.vehicle.tree</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <tree string="Vehicles">
+                <field name="name"/>
+                <field name="registration_number"/>
+                <field name="vehicle_type"/>
+                <field name="max_load_capacity"/>
+                <field name="odometer"/>
+                <field name="status" widget="badge" 
+                       decoration-success="status == 'available'"
+                       decoration-info="status == 'on_trip'"
+                       decoration-warning="status == 'in_shop'"
+                       decoration-danger="status == 'retired'"/>
+                <field name="region"/>
+                <field name="total_operational_cost" groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+                <field name="roi" groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_vehicle_form" model="ir.ui.view">
+        <field name="name">transitops.vehicle.form</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <form string="Vehicle">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_trips" type="object" class="oe_stat_button" icon="fa-road">
+                            <field name="trip_count" string="Trips" widget="statinfo"/>
+                        </button>
+                        <button name="action_view_fuel_logs" type="object" class="oe_stat_button" icon="fa-flask">
+                            <field name="fuel_log_count" string="Fuel Logs" widget="statinfo"/>
+                        </button>
+                        <button name="action_view_maintenance" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="maintenance_count" string="Maintenance" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Toyota HiAce / Van-05"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Basic Details">
+                            <field name="registration_number"/>
+                            <field name="vehicle_type"/>
+                            <field name="status"/>
+                            <field name="region"/>
+                        </group>
+                        <group string="Specifications">
+                            <field name="max_load_capacity"/>
+                            <field name="odometer"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Financial Metrics" groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst">
+                            <group>
+                                <group string="Acquisition &amp; Income">
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="acquisition_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="revenue" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                </group>
+                                <group string="Costs &amp; ROI">
+                                    <field name="total_fuel_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="total_maintenance_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="total_operational_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="roi"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Graph View: Cost -->
+    <record id="view_vehicle_graph_cost" model="ir.ui.view">
+        <field name="name">transitops.vehicle.graph.cost</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <graph string="Operational Cost per Vehicle" type="bar">
+                <field name="name"/>
+                <field name="total_operational_cost" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Graph View: Status Distribution -->
+    <record id="view_vehicle_graph_status" model="ir.ui.view">
+        <field name="name">transitops.vehicle.graph.status</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <graph string="Vehicle Status Distribution" type="pie">
+                <field name="status"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_vehicle_pivot" model="ir.ui.view">
+        <field name="name">transitops.vehicle.pivot</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <pivot string="Vehicles Analytics">
+                <field name="name" type="row"/>
+                <field name="status" type="col"/>
+                <field name="total_operational_cost" type="measure"/>
+                <field name="roi" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_vehicle_search" model="ir.ui.view">
+        <field name="name">transitops.vehicle.search</field>
+        <field name="model">transitops.vehicle</field>
+        <field name="arch" type="xml">
+            <search string="Search Vehicles">
+                <field name="name"/>
+                <field name="registration_number"/>
+                <field name="region"/>
+                <separator/>
+                <filter string="Available" name="available" domain="[('status', '=', 'available')]"/>
+                <filter string="On Trip" name="on_trip" domain="[('status', '=', 'on_trip')]"/>
+                <filter string="In Shop" name="in_shop" domain="[('status', '=', 'in_shop')]"/>
+                <filter string="Retired" name="retired" domain="[('status', '=', 'retired')]"/>
+                <separator/>
+                <filter string="Trucks" name="truck" domain="[('vehicle_type', '=', 'truck')]"/>
+                <filter string="Vans" name="van" domain="[('vehicle_type', '=', 'van')]"/>
+                <filter string="Bikes" name="bike" domain="[('vehicle_type', '=', 'bike')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_by_status" context="{'group_by': 'status'}"/>
+                    <filter string="Type" name="group_by_type" context="{'group_by': 'vehicle_type'}"/>
+                    <filter string="Region" name="group_by_region" context="{'group_by': 'region'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_transitops_vehicle" model="ir.actions.act_window">
+        <field name="name">Vehicles</field>
+        <field name="res_model">transitops.vehicle</field>
+        <field name="view_mode">tree,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_vehicle_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register your first vehicle in the registry!
+            </p>
+        </field>
+    </record>
+</odoo>

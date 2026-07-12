@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_transitops_root" name="TransitOps" sequence="10"/>
+
+    <!-- Dashboard Menu -->
+    <menuitem id="menu_transitops_dashboard" name="Dashboard" parent="menu_transitops_root" action="action_transitops_dashboard" sequence="5"/>
+    
+    <!-- Operations Submenu -->
+    <menuitem id="menu_transitops_operations" name="Operations" parent="menu_transitops_root" sequence="10"/>
+    <menuitem id="menu_transitops_trips" name="Trips" parent="menu_transitops_operations" action="action_transitops_trip" sequence="10"/>
+    
+    <!-- Fleet Management Submenu -->
+    <menuitem id="menu_transitops_fleet_root" name="Fleet" parent="menu_transitops_root" sequence="20"/>
+    <menuitem id="menu_transitops_vehicles" name="Vehicles" parent="menu_transitops_fleet_root" action="action_transitops_vehicle" sequence="10"/>
+    <menuitem id="menu_transitops_drivers" name="Drivers" parent="menu_transitops_fleet_root" action="action_transitops_driver" sequence="20"/>
+    
+    <!-- Maintenance Submenu -->
+    <menuitem id="menu_transitops_maintenance_root" name="Maintenance" parent="menu_transitops_root" sequence="30"/>
+    <menuitem id="menu_transitops_maintenance_logs" name="Maintenance Logs" parent="menu_transitops_maintenance_root" action="action_transitops_maintenance" sequence="10"/>
+    
+    <!-- Financials Submenu (Restricted) -->
+    <menuitem id="menu_transitops_financials" name="Financials" parent="menu_transitops_root" sequence="40"
+              groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+    <menuitem id="menu_transitops_fuel_logs" name="Fuel Logs" parent="menu_transitops_financials" action="action_transitops_fuel_log" sequence="10"/>
+    <menuitem id="menu_transitops_expenses" name="Expenses" parent="menu_transitops_financials" action="action_transitops_expense" sequence="20"/>
+    
+    <!-- Reporting & Analytics Submenu (Restricted) -->
+    <menuitem id="menu_transitops_reporting" name="Reporting" parent="menu_transitops_root" sequence="50"
+              groups="transit_ops.group_transitops_fleet_manager,transit_ops.group_transitops_financial_analyst"/>
+    <menuitem id="menu_transitops_reporting_vehicles" name="Vehicles Analytics" parent="menu_transitops_reporting" action="action_transitops_vehicle" sequence="10"/>
+</odoo>

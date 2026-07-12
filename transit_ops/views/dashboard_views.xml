@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_transitops_dashboard_form" model="ir.ui.view">
+        <field name="name">transitops.dashboard.form</field>
+        <field name="model">transitops.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="TransitOps Dashboard" create="false" edit="false" delete="false">
+                <sheet>
+                    <div class="row text-center mt-3 mb-4">
+                        <!-- Stat Card 1 -->
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Active Vehicles</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-primary">
+                                    <field name="active_vehicles"/>
+                                </h2>
+                            </div>
+                        </div>
+                        <!-- Stat Card 2 -->
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Available Vehicles</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-success">
+                                    <field name="available_vehicles"/>
+                                </h2>
+                            </div>
+                        </div>
+                        <!-- Stat Card 3 -->
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Vehicles in Maintenance</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-warning">
+                                    <field name="in_maintenance"/>
+                                </h2>
+                            </div>
+                        </div>
+                        <!-- Stat Card 4 -->
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Active Trips</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-info">
+                                    <field name="active_trips"/>
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-4">
+                        <!-- Stat Card 5 -->
+                        <div class="col-12 col-md-4 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Pending Trips</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-secondary">
+                                    <field name="pending_trips"/>
+                                </h2>
+                            </div>
+                        </div>
+                        <!-- Stat Card 6 -->
+                        <div class="col-12 col-md-4 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Drivers On Duty</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-info">
+                                    <field name="drivers_on_duty"/>
+                                </h2>
+                            </div>
+                        </div>
+                        <!-- Stat Card 7 -->
+                        <div class="col-12 col-md-4 mb-3">
+                            <div class="card shadow-sm border-0 bg-light p-3 h-100">
+                                <div class="text-muted small uppercase font-weight-bold">Fleet Utilization (%)</div>
+                                <h2 class="display-6 font-weight-bold mt-2 mb-0 text-dark">
+                                    <field name="fleet_utilization" widget="float" options="{'digits': [16, 1]}"/>%
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Trips Section -->
+                    <div class="mt-5">
+                        <h3 class="font-weight-bold mb-3">Recent Trips (Last 10)</h3>
+                        <field name="recent_trip_ids" mode="tree" readonly="1">
+                            <tree create="false" edit="false" delete="false">
+                                <field name="name"/>
+                                <field name="source"/>
+                                <field name="destination"/>
+                                <field name="vehicle_id"/>
+                                <field name="driver_id"/>
+                                <field name="cargo_weight"/>
+                                <field name="planned_distance"/>
+                                <field name="state" widget="badge"
+                                       decoration-muted="state == 'draft'"
+                                       decoration-warning="state == 'dispatched'"
+                                       decoration-success="state == 'completed'"
+                                       decoration-danger="state == 'cancelled'"/>
+                            </tree>
+                        </field>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action calling action_open_dashboard method -->
+    <record id="action_transitops_dashboard" model="ir.actions.server">
+        <field name="name">Dashboard</field>
+        <field name="model_id" ref="model_transitops_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">
+            action = model.action_open_dashboard()
+        </field>
+    </record>
+</odoo>

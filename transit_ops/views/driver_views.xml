@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_driver_tree" model="ir.ui.view">
+        <field name="name">transitops.driver.tree</field>
+        <field name="model">transitops.driver</field>
+        <field name="arch" type="xml">
+            <tree string="Drivers">
+                <field name="name"/>
+                <field name="license_number"/>
+                <field name="license_category"/>
+                <field name="license_expiry_date"/>
+                <field name="contact_number"/>
+                <field name="safety_score"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'available'"
+                       decoration-info="status == 'on_trip'"
+                       decoration-warning="status == 'off_duty'"
+                       decoration-danger="status == 'suspended'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_driver_form" model="ir.ui.view">
+        <field name="name">transitops.driver.form</field>
+        <field name="model">transitops.driver</field>
+        <field name="arch" type="xml">
+            <form string="Driver">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="Driver's Full Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="License Information">
+                            <field name="license_number"/>
+                            <field name="license_category"/>
+                            <field name="license_expiry_date"/>
+                        </group>
+                        <group string="Contact &amp; Status">
+                            <field name="contact_number"/>
+                            <field name="status"/>
+                            <field name="safety_score"/>
+                            <field name="user_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_driver_search" model="ir.ui.view">
+        <field name="name">transitops.driver.search</field>
+        <field name="model">transitops.driver</field>
+        <field name="arch" type="xml">
+            <search string="Search Drivers">
+                <field name="name"/>
+                <field name="license_number"/>
+                <separator/>
+                <filter string="Available" name="available" domain="[('status', '=', 'available')]"/>
+                <filter string="On Trip" name="on_trip" domain="[('status', '=', 'on_trip')]"/>
+                <filter string="Off Duty" name="off_duty" domain="[('status', '=', 'off_duty')]"/>
+                <filter string="Suspended" name="suspended" domain="[('status', '=', 'suspended')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_by_status" context="{'group_by': 'status'}"/>
+                    <filter string="License Category" name="group_by_license_category" context="{'group_by': 'license_category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_transitops_driver" model="ir.actions.act_window">
+        <field name="name">Drivers</field>
+        <field name="res_model">transitops.driver</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_driver_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register a new driver profile.
+            </p>
+        </field>
+    </record>
+</odoo>
