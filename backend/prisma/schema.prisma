@@ -1,13 +1,87 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-datasource db {
-  provider = "postgresql"
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Vehicle {
+  id                  Int           @id @default(autoincrement())
+  name                String
+  registrationNumber  String        @unique
+  vehicleType         String        // truck, van, bike, other
+  maxLoadCapacity     Float
+  odometer            Float         @default(0.0)
+  acquisitionCost     Float
+  status              String        @default("available") // available, on_trip, in_shop, retired
+  region              String?
+  revenue             Float         @default(0.0)
+  trips               Trip[]
+  maintenanceLogs     Maintenance[]
+  fuelLogs            FuelLog[]
+  expenses            Expense[]
+}
+
+model Driver {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  licenseNumber      String   @unique
+  licenseCategory    String?
+  licenseExpiryDate  DateTime
+  contactNumber      String?
+  safetyScore        Float    @default(100.0)
+  status             String   @default("available") // available, on_trip, off_duty, suspended
+  trips              Trip[]
+}
+
+model Trip {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique // e.g. TRIP-0001
+  source          String
+  destination     String
+  vehicleId       Int
+  vehicle         Vehicle       @relation(fields: [vehicleId], references: [id])
+  driverId        Int
+  driver          Driver        @relation(fields: [driverId], references: [id])
+  cargoWeight     Float
+  plannedDistance Float
+  actualDistance  Float?
+  fuelConsumed    Float?
+  state           String        @default("draft") // draft, dispatched, completed, cancelled
+  dispatchDate    DateTime?
+  completionDate  DateTime?
+  fuelLogs        FuelLog[]
+}
+
+model Maintenance {
+  id              Int      @id @default(autoincrement())
+  vehicleId       Int
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  maintenanceType String
+  cost            Float
+  date            DateTime
+  status          String   @default("active") // active, closed
+  notes           String?
+}
+
+model FuelLog {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  tripId    Int?
+  trip      Trip?    @relation(fields: [tripId], references: [id])
+  liters    Float
+  cost      Float
+  date      DateTime
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  vehicleId   Int
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  expenseType String   // toll, other
+  amount      Float
+  date        DateTime
 }

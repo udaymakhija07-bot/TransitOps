@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const routes = require('./routes');
+
 const app = express();
 
 // Middleware
@@ -11,6 +13,9 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api', routes);
 
 // Base Route
 app.get('/', (req, res) => {
