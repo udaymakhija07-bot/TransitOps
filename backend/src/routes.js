@@ -7,10 +7,10 @@ const router = express.Router();
 router.get('/dashboard/kpis', async (req, res) => {
   try {
     // Drivers & Safety Officers don't have full dashboard access in Odoo
-    if (req.user.role === 'driver' || req.user.role === 'safety') {
+    if (req.user.role === 'driver' || req.user.role === 'dispatcher' || req.user.role === 'safety') {
       // Just return own stats or restricted stats
       let tripWhere = {};
-      if (req.user.role === 'driver') {
+      if (req.user.role === 'driver' || req.user.role === 'dispatcher') {
         tripWhere = { driver: { name: req.user.name } };
       }
       const recentTrips = await prisma.trip.findMany({
@@ -108,7 +108,7 @@ router.get('/vehicles', async (req, res) => {
         : 0;
 
       // Hide financial details from Drivers and Safety Officers
-      const isDriverOrSafety = req.user.role === 'driver' || req.user.role === 'safety';
+      const isDriverOrSafety = req.user.role === 'driver' || req.user.role === 'dispatcher' || req.user.role === 'safety';
 
       return {
         id: v.id,
@@ -233,7 +233,7 @@ router.get('/drivers', async (req, res) => {
     // Hide safety score from Driver role
     const processed = drivers.map(d => ({
       ...d,
-      safetyScore: req.user.role === 'driver' ? null : d.safetyScore
+      safetyScore: (req.user.role === 'driver' || req.user.role === 'dispatcher') ? null : d.safetyScore
     }));
     res.json(processed);
   } catch (error) {
@@ -310,7 +310,7 @@ router.get('/trips', async (req, res) => {
   try {
     let whereClause = {};
     // Driver sees only trips where driver name matches user name
-    if (req.user.role === 'driver') {
+    if (req.user.role === 'driver' || req.user.role === 'dispatcher') {
       whereClause = {
         driver: {
           name: req.user.name
@@ -383,7 +383,7 @@ router.post('/trips', async (req, res) => {
 router.post('/trips/:id/dispatch', async (req, res) => {
   try {
     // Only Fleet Managers and Drivers can dispatch trips
-    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+    if (req.user.role !== 'manager' && req.user.role !== 'driver' && req.user.role !== 'dispatcher') {
       return res.status(403).json({ error: 'Access Denied: You do not have permissions to dispatch trips.' });
     }
 
@@ -401,7 +401,7 @@ router.post('/trips/:id/dispatch', async (req, res) => {
     }
 
     // If driver, check that this is their own trip
-    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+    if ((req.user.role === 'driver' || req.user.role === 'dispatcher') && trip.driver.name !== req.user.name) {
       return res.status(403).json({ error: 'Access Denied: Drivers can only dispatch their own assigned trips.' });
     }
 
@@ -456,7 +456,7 @@ router.post('/trips/:id/dispatch', async (req, res) => {
 // Complete Trip
 router.post('/trips/:id/complete', async (req, res) => {
   try {
-    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+    if (req.user.role !== 'manager' && req.user.role !== 'driver' && req.user.role !== 'dispatcher') {
       return res.status(403).json({ error: 'Access Denied: You do not have permissions to complete trips.' });
     }
 
@@ -480,7 +480,7 @@ router.post('/trips/:id/complete', async (req, res) => {
     }
 
     // If driver, check that this is their own trip
-    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+    if ((req.user.role === 'driver' || req.user.role === 'dispatcher') && trip.driver.name !== req.user.name) {
       return res.status(403).json({ error: 'Access Denied: Drivers can only complete their own assigned trips.' });
     }
 
@@ -529,7 +529,7 @@ router.post('/trips/:id/complete', async (req, res) => {
 // Cancel Trip
 router.post('/trips/:id/cancel', async (req, res) => {
   try {
-    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+    if (req.user.role !== 'manager' && req.user.role !== 'driver' && req.user.role !== 'dispatcher') {
       return res.status(403).json({ error: 'Access Denied: You do not have permissions to cancel trips.' });
     }
 
@@ -547,7 +547,7 @@ router.post('/trips/:id/cancel', async (req, res) => {
     }
 
     // If driver, check that this is their own trip
-    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+    if ((req.user.role === 'driver' || req.user.role === 'dispatcher') && trip.driver.name !== req.user.name) {
       return res.status(403).json({ error: 'Access Denied: Drivers can only cancel their own assigned trips.' });
     }
 

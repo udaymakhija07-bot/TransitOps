@@ -394,7 +394,7 @@ export default function Home() {
   }
 
   const isTabAllowed = (tab: string) => {
-    if (currentUser.role === 'driver') {
+    if (currentUser.role === 'driver' || currentUser.role === 'dispatcher') {
       return tab === 'dashboard' || tab === 'trips';
     }
     return true;
@@ -753,7 +753,7 @@ export default function Home() {
             )}
 
             {/* Add / Plan Button */}
-            {(currentUser.role !== 'driver' && currentUser.role !== 'safety' && currentUser.role !== 'analyst') && (
+            {(currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' && currentUser.role !== 'safety' && currentUser.role !== 'analyst') && (
               <button
                 onClick={() => {
                   if (activeTab === "vehicles") setShowVehicleModal(true);
@@ -783,7 +783,7 @@ export default function Home() {
                 {activeTab === "vehicles" ? "Register Vehicle" : activeTab === "drivers" ? "Add Driver" : "Plan Trip"}
               </button>
             )}
-            {currentUser.role === 'driver' && activeTab === "trips" && (
+            {(currentUser.role === 'driver' || currentUser.role === 'dispatcher') && activeTab === "trips" && (
               <button
                 onClick={() => setShowTripModal(true)}
                 className="btn-primary"
@@ -839,7 +839,7 @@ export default function Home() {
             <div className="space-y-7 animate-fade-in">
 
               {/* KPI Cards */}
-              {currentUser.role !== 'driver' && currentUser.role !== 'safety' ? (
+              {currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' && currentUser.role !== 'safety' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {[
                     {
@@ -943,7 +943,7 @@ export default function Home() {
               )}
 
               {/* Charts */}
-              {currentUser.role !== 'driver' && currentUser.role !== 'safety' && (
+              {currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' && currentUser.role !== 'safety' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                   {/* Donut Chart */}
@@ -957,7 +957,7 @@ export default function Home() {
                     <div className="flex items-center justify-around gap-6">
                       <div className="relative w-36 h-36">
                         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1a2744" strokeWidth="3"/>
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--bg-elevated)" strokeWidth="3"/>
                           <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="3.2"
                             strokeDasharray={`${totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0)}`}
                             strokeDashoffset="0"
@@ -1037,7 +1037,7 @@ export default function Home() {
                   style={{ borderBottom: "1px solid var(--border-subtle)" }}
                 >
                   <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                    {currentUser.role === 'driver' ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
+                    {(currentUser.role === 'driver' || currentUser.role === 'dispatcher') ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
                   </h3>
                   {isTabAllowed("trips") && (
                     <button
@@ -1167,7 +1167,7 @@ export default function Home() {
                       {[
                         { label: "Max Load", val: `${v.maxLoadCapacity} kg` },
                         { label: "Odometer", val: `${v.odometer} km` },
-                        ...(currentUser.role !== 'driver' && currentUser.role !== 'safety' ? [
+                        ...(currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' && currentUser.role !== 'safety' ? [
                           { label: "Op. Cost", val: `$${v.total_operational_cost?.toFixed(2) || "0.00"}` },
                           { label: "ROI", val: `${v.roi?.toFixed(1) || "0.0"}%`, highlight: true },
                         ] : []),
@@ -1207,7 +1207,7 @@ export default function Home() {
                   <table className="w-full text-left">
                     <thead>
                       <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
-                        {["Name", "License Number", "Category", "Expiry Date", "Contact", ...(currentUser.role !== 'driver' ? ["Safety Score"] : []), "Status", ...(currentUser.role === 'manager' ? ["Delete"] : [])].map(h => (
+                        {["Name", "License Number", "Category", "Expiry Date", "Contact", ...(currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' ? ["Safety Score"] : []), "Status", ...(currentUser.role === 'manager' ? ["Delete"] : [])].map(h => (
                           <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
                         ))}
                       </tr>
@@ -1230,7 +1230,7 @@ export default function Home() {
                             </span>
                           </td>
                           <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.contactNumber || "N/A"}</td>
-                          {currentUser.role !== 'driver' && (
+                          {currentUser.role !== 'driver' && currentUser.role !== 'dispatcher' && (
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold" style={{ color: d.safetyScore >= 80 ? "#34d399" : d.safetyScore >= 50 ? "#fbbf24" : "#fb7185" }}>
