@@ -69,7 +69,7 @@ export default function Home() {
     fuelConsumed: ""
   });
 
-  const BACKEND_URL = "http://localhost:5000/api";
+  const BACKEND_URL = "http://localhost:5005/api";
 
   const showNotification = (type: "success" | "error", message: string) => {
     if (type === "success") {
@@ -115,7 +115,7 @@ export default function Home() {
 
     } catch (err) {
       console.error(err);
-      showNotification("error", "Could not connect to backend server. Make sure the API server is running on port 5000.");
+      showNotification("error", "Could not connect to backend server. Make sure the API server is running on port 5005.");
     } finally {
       setLoading(false);
     }
