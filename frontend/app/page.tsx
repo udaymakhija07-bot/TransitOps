@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [token, setToken] = useState("");
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -22,7 +27,6 @@ export default function Home() {
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [trips, setTrips] = useState([]);
-  const [maintenance, setMaintenance] = useState([]);
 
   // Modals States
   const [showVehicleModal, setShowVehicleModal] = useState(false);
@@ -77,28 +81,37 @@ export default function Home() {
     }
   };
 
-  const fetchData = async () => {
+  const getHeaders = (jwtToken?: string) => {
+    const activeToken = jwtToken || token;
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${activeToken}`
+    };
+  };
+
+  const fetchData = async (jwtToken?: string) => {
     setLoading(true);
+    const activeToken = jwtToken || token;
+    if (!activeToken) return;
+
     try {
+      const headers = getHeaders(activeToken);
+
       // Fetch KPIs
-      const kpisRes = await fetch(`${BACKEND_URL}/dashboard/kpis`);
+      const kpisRes = await fetch(`${BACKEND_URL}/dashboard/kpis`, { headers });
       if (kpisRes.ok) setKpis(await kpisRes.json());
 
       // Fetch Vehicles
-      const vehRes = await fetch(`${BACKEND_URL}/vehicles`);
+      const vehRes = await fetch(`${BACKEND_URL}/vehicles`, { headers });
       if (vehRes.ok) setVehicles(await vehRes.json());
 
       // Fetch Drivers
-      const drvRes = await fetch(`${BACKEND_URL}/drivers`);
+      const drvRes = await fetch(`${BACKEND_URL}/drivers`, { headers });
       if (drvRes.ok) setDrivers(await drvRes.json());
 
       // Fetch Trips
-      const tripRes = await fetch(`${BACKEND_URL}/trips`);
+      const tripRes = await fetch(`${BACKEND_URL}/trips`, { headers });
       if (tripRes.ok) setTrips(await tripRes.json());
-
-      // Fetch Maintenance
-      const maintRes = await fetch(`${BACKEND_URL}/maintenance`);
-      if (maintRes.ok) setMaintenance(await maintRes.json());
 
     } catch (err) {
       console.error(err);
@@ -109,8 +122,25 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
+    const savedToken = localStorage.getItem("transitops_token");
+    const savedUser = localStorage.getItem("transitops_user");
+    
+    if (!savedToken || !savedUser) {
+      router.push("/login");
+      return;
+    }
+
+    setToken(savedToken);
+    setCurrentUser(JSON.parse(savedUser));
+    
+    fetchData(savedToken);
   }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("transitops_token");
+    localStorage.removeItem("transitops_user");
+    router.push("/login");
+  };
 
   // Form Submissions
   const handleCreateVehicle = async (e: React.FormEvent) => {
@@ -118,7 +148,7 @@ export default function Home() {
     try {
       const res = await fetch(`${BACKEND_URL}/vehicles`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(vehicleForm)
       });
       const data = await res.json();
@@ -148,7 +178,7 @@ export default function Home() {
     try {
       const res = await fetch(`${BACKEND_URL}/drivers`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(driverForm)
       });
       const data = await res.json();
@@ -176,7 +206,7 @@ export default function Home() {
     try {
       const res = await fetch(`${BACKEND_URL}/trips`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(tripForm)
       });
       const data = await res.json();
@@ -201,7 +231,8 @@ export default function Home() {
   const handleDispatchTrip = async (tripId: number) => {
     try {
       const res = await fetch(`${BACKEND_URL}/trips/${tripId}/dispatch`, {
-        method: "POST"
+        method: "POST",
+        headers: getHeaders()
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to dispatch trip");
@@ -219,7 +250,7 @@ export default function Home() {
     try {
       const res = await fetch(`${BACKEND_URL}/trips/${selectedTrip.id}/complete`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(completionForm)
       });
       const data = await res.json();
@@ -239,7 +270,8 @@ export default function Home() {
     if (!confirm("Are you sure you want to cancel this trip?")) return;
     try {
       const res = await fetch(`${BACKEND_URL}/trips/${tripId}/cancel`, {
-        method: "POST"
+        method: "POST",
+        headers: getHeaders()
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to cancel trip");
@@ -255,7 +287,8 @@ export default function Home() {
     if (!confirm("Delete this vehicle registry?")) return;
     try {
       const res = await fetch(`${BACKEND_URL}/vehicles/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getHeaders()
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete");
@@ -271,7 +304,8 @@ export default function Home() {
     if (!confirm("Delete this driver profile?")) return;
     try {
       const res = await fetch(`${BACKEND_URL}/drivers/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getHeaders()
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete");
@@ -281,6 +315,18 @@ export default function Home() {
     } catch (err: any) {
       showNotification("error", err.message);
     }
+  };
+
+  if (!currentUser) {
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading Session...</div>;
+  }
+
+  // RBAC Tab Restriction Helper
+  const isTabAllowed = (tab: string) => {
+    if (currentUser.role === 'driver') {
+      return tab === 'dashboard' || tab === 'trips';
+    }
+    return true;
   };
 
   return (
@@ -306,7 +352,7 @@ export default function Home() {
           {/* Logo Header */}
           <div className="p-6 border-b border-slate-800 flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-1-1h-7m7 5H3"/></svg>
-            <span className="text-xl font-bold tracking-tight text-white uppercase">TransitOps</span>
+            <span className="text-xl font-bold tracking-tight text-white uppercase font-sans">TransitOps</span>
           </div>
 
           {/* Navigation Links */}
@@ -318,34 +364,52 @@ export default function Home() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
               Dashboard
             </button>
-            <button
-              onClick={() => setActiveTab("vehicles")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "vehicles" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/></svg>
-              Fleet Vehicles
-            </button>
-            <button
-              onClick={() => setActiveTab("drivers")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "drivers" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-              Drivers Directory
-            </button>
-            <button
-              onClick={() => setActiveTab("trips")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "trips" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-              Trip Planner
-            </button>
+            {isTabAllowed("vehicles") && (
+              <button
+                onClick={() => setActiveTab("vehicles")}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "vehicles" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/></svg>
+                Fleet Vehicles
+              </button>
+            )}
+            {isTabAllowed("drivers") && (
+              <button
+                onClick={() => setActiveTab("drivers")}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "drivers" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Drivers Directory
+              </button>
+            )}
+            {isTabAllowed("trips") && (
+              <button
+                onClick={() => setActiveTab("trips")}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "trips" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                Trip Planner
+              </button>
+            )}
           </nav>
         </div>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-slate-800 text-slate-500 text-xs flex flex-col gap-1 bg-slate-900/50">
-          <div>Logged in as: <strong>Fleet Manager</strong></div>
-          <div>TransitOps Platform v1.0</div>
+        {/* Footer profile & logout */}
+        <div className="p-4 border-t border-slate-800 text-slate-400 text-xs flex flex-col gap-3 bg-slate-900/50">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-slate-500 uppercase tracking-wider font-bold text-[10px]">User Account</span>
+            <div className="font-semibold text-slate-200">{currentUser.name}</div>
+            <div className="text-slate-500 font-mono text-[10px]">{currentUser.email}</div>
+            <div className="mt-1"><span className="bg-slate-800 text-violet-400 font-bold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide border border-violet-500/20">{currentUser.role}</span></div>
+          </div>
+          
+          <button 
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-rose-950/30 hover:text-rose-400 hover:border-rose-900/40 text-slate-300 font-bold py-2 rounded-lg border border-slate-700 transition-all text-xs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -361,23 +425,34 @@ export default function Home() {
 
           <div className="flex gap-3">
             <button 
-              onClick={fetchData}
+              onClick={() => fetchData()}
               className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm transition-all border border-slate-700"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2M4 9h5v5"/></svg>
               Sync Data
             </button>
-            <button 
-              onClick={() => {
-                if (activeTab === "vehicles") setShowVehicleModal(true);
-                else if (activeTab === "drivers") setShowDriverModal(true);
-                else setShowTripModal(true);
-              }}
-              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
-              {activeTab === "vehicles" ? "Register Vehicle" : activeTab === "drivers" ? "Add Driver" : "Plan Trip"}
-            </button>
+            {currentUser.role !== 'driver' && currentUser.role !== 'safety' && currentUser.role !== 'analyst' && (
+              <button 
+                onClick={() => {
+                  if (activeTab === "vehicles") setShowVehicleModal(true);
+                  else if (activeTab === "drivers") setShowDriverModal(true);
+                  else setShowTripModal(true);
+                }}
+                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                {activeTab === "vehicles" ? "Register Vehicle" : activeTab === "drivers" ? "Add Driver" : "Plan Trip"}
+              </button>
+            )}
+            {currentUser.role === 'driver' && activeTab === "trips" && (
+              <button 
+                onClick={() => setShowTripModal(true)}
+                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                Plan Trip
+              </button>
+            )}
           </div>
         </header>
 
@@ -388,56 +463,74 @@ export default function Home() {
           {activeTab === "dashboard" && (
             <div className="space-y-8 animate-fade-in">
               {/* KPIs Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                {/* Active Vehicles */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-violet-500/50 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-violet-500/20 transition-all"/>
-                  <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Active Vehicles</span>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-extrabold text-slate-100">{kpis.active_vehicles}</span>
-                    <span className="text-xs text-slate-500">In Fleet</span>
+              {currentUser.role !== 'driver' && currentUser.role !== 'safety' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  
+                  {/* Active Vehicles */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-violet-500/50 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-violet-500/20 transition-all"/>
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Active Vehicles</span>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span className="text-4xl font-extrabold text-slate-100">{kpis.active_vehicles}</span>
+                      <span className="text-xs text-slate-500">In Fleet</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Available Vehicles */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-emerald-500/20 transition-all"/>
-                  <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Available Vehicles</span>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-extrabold text-emerald-400">{kpis.available_vehicles}</span>
-                    <span className="text-xs text-slate-500">Ready</span>
+                  {/* Available Vehicles */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-emerald-500/20 transition-all"/>
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Available Vehicles</span>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span className="text-4xl font-extrabold text-emerald-400">{kpis.available_vehicles}</span>
+                      <span className="text-xs text-slate-500">Ready</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Vehicles in Maintenance */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-amber-500/20 transition-all"/>
-                  <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">In Maintenance</span>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-extrabold text-amber-500">{kpis.in_maintenance}</span>
-                    <span className="text-xs text-slate-500">In Shop</span>
+                  {/* Vehicles in Maintenance */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-amber-500/20 transition-all"/>
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">In Maintenance</span>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span className="text-4xl font-extrabold text-amber-500">{kpis.in_maintenance}</span>
+                      <span className="text-xs text-slate-500">In Shop</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Fleet Utilization */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-indigo-500/20 transition-all"/>
-                  <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Fleet Utilization</span>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-extrabold text-indigo-400">{kpis.fleet_utilization.toFixed(1)}%</span>
-                    <span className="text-xs text-slate-500">Active Logs</span>
+                  {/* Fleet Utilization */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-indigo-500/20 transition-all"/>
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Fleet Utilization</span>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span className="text-4xl font-extrabold text-indigo-400">{kpis.fleet_utilization.toFixed(1)}%</span>
+                      <span className="text-xs text-slate-500">Active Logs</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Restricted Dashboard for Driver / Safety */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Active Dispatched Trips</span>
+                    <div className="text-4xl font-extrabold text-sky-400 mt-4">{kpis.active_trips}</div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Planned Draft Trips</span>
+                    <div className="text-4xl font-extrabold text-slate-400 mt-4">{kpis.pending_trips}</div>
+                  </div>
+                </div>
+              )}
 
               {/* Lower Section: Recent Trips */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
                 <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-slate-200">Recent Trip Operations (Last 10)</h3>
-                  <button onClick={() => setActiveTab("trips")} className="text-violet-400 hover:text-violet-300 text-sm font-semibold flex items-center gap-1 transition-all">
-                    View All Trips &rarr;
-                  </button>
+                  <h3 className="text-lg font-bold text-slate-200">
+                    {currentUser.role === 'driver' ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
+                  </h3>
+                  {isTabAllowed("trips") && (
+                    <button onClick={() => setActiveTab("trips")} className="text-violet-400 hover:text-violet-300 text-sm font-semibold flex items-center gap-1 transition-all">
+                      View All Trips &rarr;
+                    </button>
+                  )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -539,12 +632,14 @@ export default function Home() {
                         }`}>
                           {v.status}
                         </span>
-                        <button 
-                          onClick={() => handleDeleteVehicle(v.id)}
-                          className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
+                        {currentUser.role === 'manager' && (
+                          <button 
+                            onClick={() => handleDeleteVehicle(v.id)}
+                            className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        )}
                       </div>
 
                       <h3 className="text-lg font-bold text-slate-100">{v.name}</h3>
@@ -559,14 +654,18 @@ export default function Home() {
                           <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Odometer</div>
                           <div className="text-sm font-medium text-slate-200 mt-1">{v.odometer} km</div>
                         </div>
-                        <div>
-                          <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Operational Cost</div>
-                          <div className="text-sm font-medium text-slate-200 mt-1">${v.total_operational_cost?.toFixed(2) || "0.00"}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">ROI Impact</div>
-                          <div className="text-sm font-bold text-violet-400 mt-1">{v.roi?.toFixed(1) || "0.0"}%</div>
-                        </div>
+                        {currentUser.role !== 'driver' && currentUser.role !== 'safety' && (
+                          <>
+                            <div>
+                              <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Operational Cost</div>
+                              <div className="text-sm font-medium text-slate-200 mt-1">${v.total_operational_cost?.toFixed(2) || "0.00"}</div>
+                            </div>
+                            <div>
+                              <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">ROI Impact</div>
+                              <div className="text-sm font-bold text-violet-400 mt-1">{v.roi?.toFixed(1) || "0.0"}%</div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -593,9 +692,9 @@ export default function Home() {
                         <th className="px-6 py-4">Category</th>
                         <th className="px-6 py-4">License Expiration</th>
                         <th className="px-6 py-4">Contact</th>
-                        <th className="px-6 py-4">Safety Score</th>
+                        {currentUser.role !== 'driver' && <th className="px-6 py-4">Safety Score</th>}
                         <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Delete</th>
+                        {currentUser.role === 'manager' && <th className="px-6 py-4 text-right">Delete</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
@@ -610,16 +709,18 @@ export default function Home() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-slate-400">{d.contactNumber || "N/A"}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className={`font-bold ${d.safetyScore >= 80 ? "text-emerald-400" : d.safetyScore >= 50 ? "text-amber-500" : "text-rose-500"}`}>
-                                {d.safetyScore}%
-                              </span>
-                              <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                <div className={`h-full ${d.safetyScore >= 80 ? "bg-emerald-500" : d.safetyScore >= 50 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${d.safetyScore}%` }}/>
+                          {currentUser.role !== 'driver' && (
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-bold ${d.safetyScore >= 80 ? "text-emerald-400" : d.safetyScore >= 50 ? "text-amber-500" : "text-rose-500"}`}>
+                                  {d.safetyScore}%
+                                </span>
+                                <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className={`h-full ${d.safetyScore >= 80 ? "bg-emerald-500" : d.safetyScore >= 50 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${d.safetyScore}%` }}/>
+                                </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
+                          )}
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                               d.status === "available" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
@@ -630,14 +731,16 @@ export default function Home() {
                               {d.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => handleDeleteDriver(d.id)}
-                              className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
-                          </td>
+                          {currentUser.role === 'manager' && (
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleDeleteDriver(d.id)}
+                                className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -987,7 +1090,7 @@ export default function Home() {
                   >
                     <option value="">-- Choose Driver --</option>
                     {drivers.filter((d: any) => d.status === "available" && new Date(d.licenseExpiryDate) > new Date()).map((d: any) => (
-                      <option key={d.id} value={d.id}>{d.name} (Safety: {d.safetyScore}%)</option>
+                      <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
                 </div>

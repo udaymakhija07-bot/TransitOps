@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -9,8 +10,50 @@ async function main() {
   await prisma.trip.deleteMany();
   await prisma.driver.deleteMany();
   await prisma.vehicle.deleteMany();
+  await prisma.user.deleteMany();
 
   console.log('Cleaned old records.');
+
+  // Create Users with different roles (Password: password123)
+  const passwordHash = await bcrypt.hash('password123', 10);
+  
+  await prisma.user.create({
+    data: {
+      email: 'manager@transitops.com',
+      password: passwordHash,
+      role: 'manager',
+      name: 'Fleet Manager'
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'driver@transitops.com',
+      password: passwordHash,
+      role: 'driver',
+      name: 'Amit Singh'
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'safety@transitops.com',
+      password: passwordHash,
+      role: 'safety',
+      name: 'Safety Officer'
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'analyst@transitops.com',
+      password: passwordHash,
+      role: 'analyst',
+      name: 'Financial Analyst'
+    }
+  });
+
+  console.log('User accounts seeded.');
 
   // Create Vehicles
   const v1 = await prisma.vehicle.create({

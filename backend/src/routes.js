@@ -6,6 +6,31 @@ const router = express.Router();
 // ==================== DASHBOARD & KPIS ====================
 router.get('/dashboard/kpis', async (req, res) => {
   try {
+    // Drivers & Safety Officers don't have full dashboard access in Odoo
+    if (req.user.role === 'driver' || req.user.role === 'safety') {
+      // Just return own stats or restricted stats
+      let tripWhere = {};
+      if (req.user.role === 'driver') {
+        tripWhere = { driver: { name: req.user.name } };
+      }
+      const recentTrips = await prisma.trip.findMany({
+        where: tripWhere,
+        take: 10,
+        orderBy: { id: 'desc' },
+        include: { vehicle: true, driver: true }
+      });
+      return res.json({
+        active_vehicles: 0,
+        available_vehicles: 0,
+        in_maintenance: 0,
+        active_trips: recentTrips.filter(t => t.state === 'dispatched').length,
+        pending_trips: recentTrips.filter(t => t.state === 'draft').length,
+        drivers_on_duty: 0,
+        fleet_utilization: 0,
+        recent_trips: recentTrips
+      });
+    }
+
     const activeVehiclesCount = await prisma.vehicle.count({
       where: { status: { not: 'retired' } }
     });
@@ -82,12 +107,24 @@ router.get('/vehicles', async (req, res) => {
         ? ((v.revenue - totalOpCost) / v.acquisitionCost) * 100 
         : 0;
 
+      // Hide financial details from Drivers and Safety Officers
+      const isDriverOrSafety = req.user.role === 'driver' || req.user.role === 'safety';
+
       return {
-        ...v,
-        total_fuel_cost: fuelCost,
-        total_maintenance_cost: maintCost,
-        total_operational_cost: totalOpCost,
-        roi: roi
+        id: v.id,
+        name: v.name,
+        registrationNumber: v.registrationNumber,
+        vehicleType: v.vehicleType,
+        maxLoadCapacity: v.maxLoadCapacity,
+        odometer: v.odometer,
+        status: v.status,
+        region: v.region,
+        acquisitionCost: isDriverOrSafety ? 0 : v.acquisitionCost,
+        revenue: isDriverOrSafety ? 0 : v.revenue,
+        total_fuel_cost: isDriverOrSafety ? 0 : fuelCost,
+        total_maintenance_cost: isDriverOrSafety ? 0 : maintCost,
+        total_operational_cost: isDriverOrSafety ? 0 : totalOpCost,
+        roi: isDriverOrSafety ? 0 : roi
       };
     });
 
@@ -99,6 +136,11 @@ router.get('/vehicles', async (req, res) => {
 
 router.post('/vehicles', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers can register vehicles.' });
+    }
+
     const { name, registrationNumber, vehicleType, maxLoadCapacity, odometer, acquisitionCost, status, region, revenue } = req.body;
     
     if (!name || !registrationNumber || !vehicleType || maxLoadCapacity <= 0) {
@@ -133,6 +175,11 @@ router.post('/vehicles', async (req, res) => {
 
 router.delete('/vehicles/:id', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers can delete vehicles.' });
+    }
+
     const id = parseInt(req.params.id);
     const trips = await prisma.trip.findFirst({
       where: { vehicleId: id }
@@ -152,7 +199,12 @@ router.delete('/vehicles/:id', async (req, res) => {
 router.get('/drivers', async (req, res) => {
   try {
     const drivers = await prisma.driver.findMany();
-    res.json(drivers);
+    // Hide safety score from Driver role
+    const processed = drivers.map(d => ({
+      ...d,
+      safetyScore: req.user.role === 'driver' ? null : d.safetyScore
+    }));
+    res.json(processed);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch drivers.' });
   }
@@ -160,6 +212,11 @@ router.get('/drivers', async (req, res) => {
 
 router.post('/drivers', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager' && req.user.role !== 'safety') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers or Safety Officers can manage drivers.' });
+    }
+
     const { name, licenseNumber, licenseCategory, licenseExpiryDate, contactNumber, safetyScore, status } = req.body;
     
     if (!name || !licenseNumber || !licenseExpiryDate) {
@@ -197,6 +254,11 @@ router.post('/drivers', async (req, res) => {
 
 router.delete('/drivers/:id', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager' && req.user.role !== 'safety') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers or Safety Officers can delete drivers.' });
+    }
+
     const id = parseInt(req.params.id);
     const trips = await prisma.trip.findFirst({
       where: { driverId: id }
@@ -215,7 +277,18 @@ router.delete('/drivers/:id', async (req, res) => {
 // ==================== TRIPS ====================
 router.get('/trips', async (req, res) => {
   try {
+    let whereClause = {};
+    // Driver sees only trips where driver name matches user name
+    if (req.user.role === 'driver') {
+      whereClause = {
+        driver: {
+          name: req.user.name
+        }
+      };
+    }
+
     const trips = await prisma.trip.findMany({
+      where: whereClause,
       include: {
         vehicle: true,
         driver: true
@@ -230,6 +303,11 @@ router.get('/trips', async (req, res) => {
 
 router.post('/trips', async (req, res) => {
   try {
+    // Safety officers & Analysts cannot schedule trips
+    if (req.user.role === 'safety' || req.user.role === 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: You do not have permissions to plan trips.' });
+    }
+
     const { source, destination, vehicleId, driverId, cargoWeight, plannedDistance } = req.body;
     
     if (!source || !destination || !vehicleId || !driverId || cargoWeight <= 0) {
@@ -273,6 +351,11 @@ router.post('/trips', async (req, res) => {
 // Dispatch Trip
 router.post('/trips/:id/dispatch', async (req, res) => {
   try {
+    // Only Fleet Managers and Drivers can dispatch trips
+    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+      return res.status(403).json({ error: 'Access Denied: You do not have permissions to dispatch trips.' });
+    }
+
     const id = parseInt(req.params.id);
     const trip = await prisma.trip.findUnique({
       where: { id },
@@ -284,6 +367,11 @@ router.post('/trips/:id/dispatch', async (req, res) => {
     }
     if (trip.state !== 'draft') {
       return res.status(400).json({ error: 'Only draft trips can be dispatched.' });
+    }
+
+    // If driver, check that this is their own trip
+    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+      return res.status(403).json({ error: 'Access Denied: Drivers can only dispatch their own assigned trips.' });
     }
 
     if (trip.plannedDistance <= 0) {
@@ -337,6 +425,10 @@ router.post('/trips/:id/dispatch', async (req, res) => {
 // Complete Trip
 router.post('/trips/:id/complete', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+      return res.status(403).json({ error: 'Access Denied: You do not have permissions to complete trips.' });
+    }
+
     const id = parseInt(req.params.id);
     const { actualDistance, fuelConsumed } = req.body;
 
@@ -346,7 +438,7 @@ router.post('/trips/:id/complete', async (req, res) => {
 
     const trip = await prisma.trip.findUnique({
       where: { id },
-      include: { vehicle: true }
+      include: { vehicle: true, driver: true }
     });
 
     if (!trip) {
@@ -354,6 +446,11 @@ router.post('/trips/:id/complete', async (req, res) => {
     }
     if (trip.state !== 'dispatched') {
       return res.status(400).json({ error: 'Only dispatched trips can be completed.' });
+    }
+
+    // If driver, check that this is their own trip
+    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+      return res.status(403).json({ error: 'Access Denied: Drivers can only complete their own assigned trips.' });
     }
 
     // Restore vehicle and driver to available
@@ -401,14 +498,26 @@ router.post('/trips/:id/complete', async (req, res) => {
 // Cancel Trip
 router.post('/trips/:id/cancel', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'driver') {
+      return res.status(403).json({ error: 'Access Denied: You do not have permissions to cancel trips.' });
+    }
+
     const id = parseInt(req.params.id);
-    const trip = await prisma.trip.findUnique({ where: { id } });
+    const trip = await prisma.trip.findUnique({
+      where: { id },
+      include: { driver: true }
+    });
 
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found.' });
     }
     if (trip.state !== 'draft' && trip.state !== 'dispatched') {
       return res.status(400).json({ error: 'Only draft or dispatched trips can be cancelled.' });
+    }
+
+    // If driver, check that this is their own trip
+    if (req.user.role === 'driver' && trip.driver.name !== req.user.name) {
+      return res.status(403).json({ error: 'Access Denied: Drivers can only cancel their own assigned trips.' });
     }
 
     if (trip.state === 'dispatched') {
@@ -448,6 +557,11 @@ router.get('/maintenance', async (req, res) => {
 
 router.post('/maintenance', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers or Financial Analysts can schedule maintenance.' });
+    }
+
     const { vehicleId, maintenanceType, cost, date, status, notes } = req.body;
     if (!vehicleId || !maintenanceType || cost < 0 || !date) {
       return res.status(400).json({ error: 'Valid Vehicle, Type, non-negative Cost, and Date are required.' });
@@ -480,6 +594,11 @@ router.post('/maintenance', async (req, res) => {
 
 router.put('/maintenance/:id', async (req, res) => {
   try {
+    // RBAC check
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Only Fleet Managers or Financial Analysts can update maintenance logs.' });
+    }
+
     const id = parseInt(req.params.id);
     const { status } = req.body;
 
@@ -527,6 +646,10 @@ router.put('/maintenance/:id', async (req, res) => {
 // ==================== FUEL LOGS ====================
 router.get('/fuel-logs', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Financial access restricted.' });
+    }
+
     const logs = await prisma.fuelLog.findMany({
       include: { vehicle: true }
     });
@@ -538,6 +661,10 @@ router.get('/fuel-logs', async (req, res) => {
 
 router.post('/fuel-logs', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Financial access restricted.' });
+    }
+
     const { vehicleId, tripId, liters, cost, date } = req.body;
     if (!vehicleId || liters <= 0 || cost <= 0 || !date) {
       return res.status(400).json({ error: 'Valid Vehicle, Liters, Cost, and Date are required.' });
@@ -561,6 +688,10 @@ router.post('/fuel-logs', async (req, res) => {
 // ==================== EXPENSES ====================
 router.get('/expenses', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Financial access restricted.' });
+    }
+
     const list = await prisma.expense.findMany({
       include: { vehicle: true }
     });
@@ -572,6 +703,10 @@ router.get('/expenses', async (req, res) => {
 
 router.post('/expenses', async (req, res) => {
   try {
+    if (req.user.role !== 'manager' && req.user.role !== 'analyst') {
+      return res.status(403).json({ error: 'Access Denied: Financial access restricted.' });
+    }
+
     const { vehicleId, expenseType, amount, date } = req.body;
     if (!vehicleId || !expenseType || amount <= 0 || !date) {
       return res.status(400).json({ error: 'Valid Vehicle, Type, Amount, and Date are required.' });

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const auth = require('./auth');
 const routes = require('./routes');
 
 const app = express();
@@ -15,7 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
-app.use('/api', routes);
+app.use('/api/auth', auth.router);
+app.use('/api', auth.authenticateToken, routes);
 
 // Base Route
 app.get('/', (req, res) => {
