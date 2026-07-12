@@ -102,19 +102,15 @@ export default function Home() {
     try {
       const headers = getHeaders(activeToken);
 
-      // Fetch KPIs
       const kpisRes = await fetch(`${BACKEND_URL}/dashboard/kpis`, { headers });
       if (kpisRes.ok) setKpis(await kpisRes.json());
 
-      // Fetch Vehicles
       const vehRes = await fetch(`${BACKEND_URL}/vehicles`, { headers });
       if (vehRes.ok) setVehicles(await vehRes.json());
 
-      // Fetch Drivers
       const drvRes = await fetch(`${BACKEND_URL}/drivers`, { headers });
       if (drvRes.ok) setDrivers(await drvRes.json());
 
-      // Fetch Trips
       const tripRes = await fetch(`${BACKEND_URL}/trips`, { headers });
       if (tripRes.ok) setTrips(await tripRes.json());
 
@@ -129,7 +125,7 @@ export default function Home() {
   useEffect(() => {
     const savedToken = localStorage.getItem("transitops_token");
     const savedUser = localStorage.getItem("transitops_user");
-    
+
     if (!savedToken || !savedUser) {
       router.push("/login");
       return;
@@ -137,7 +133,6 @@ export default function Home() {
 
     setToken(savedToken);
     setCurrentUser(JSON.parse(savedUser));
-    
     fetchData(savedToken);
   }, []);
 
@@ -153,8 +148,7 @@ export default function Home() {
       showNotification("error", "No data available to export.");
       return;
     }
-    
-    // Create clean rows by omitting relational object arrays
+
     const cleanData = data.map(({ trips, maintenanceLogs, fuelLogs, expenses, vehicle, driver, ...rest }) => ({
       ...rest,
       vehicleName: vehicle ? vehicle.name : undefined,
@@ -162,7 +156,7 @@ export default function Home() {
     }));
 
     const headers = Object.keys(cleanData[0]).join(",");
-    const rows = cleanData.map(row => 
+    const rows = cleanData.map(row =>
       Object.values(row).map(value => {
         const str = value === null || value === undefined ? "" : String(value).replace(/"/g, '""');
         return str.includes(",") || str.includes("\n") ? `"${str}"` : str;
@@ -191,19 +185,13 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create vehicle");
-      
+
       showNotification("success", "Vehicle registered successfully!");
       setShowVehicleModal(false);
       setVehicleForm({
-        name: "",
-        registrationNumber: "",
-        vehicleType: "van",
-        maxLoadCapacity: "",
-        odometer: "0",
-        acquisitionCost: "0",
-        status: "available",
-        region: "",
-        revenue: "0"
+        name: "", registrationNumber: "", vehicleType: "van",
+        maxLoadCapacity: "", odometer: "0", acquisitionCost: "0",
+        status: "available", region: "", revenue: "0"
       });
       fetchData();
     } catch (err: any) {
@@ -225,13 +213,8 @@ export default function Home() {
       showNotification("success", "Driver registered successfully!");
       setShowDriverModal(false);
       setDriverForm({
-        name: "",
-        licenseNumber: "",
-        licenseCategory: "",
-        licenseExpiryDate: "",
-        contactNumber: "",
-        safetyScore: "100",
-        status: "available"
+        name: "", licenseNumber: "", licenseCategory: "",
+        licenseExpiryDate: "", contactNumber: "", safetyScore: "100", status: "available"
       });
       fetchData();
     } catch (err: any) {
@@ -252,14 +235,7 @@ export default function Home() {
 
       showNotification("success", "Trip planned successfully!");
       setShowTripModal(false);
-      setTripForm({
-        source: "",
-        destination: "",
-        vehicleId: "",
-        driverId: "",
-        cargoWeight: "",
-        plannedDistance: ""
-      });
+      setTripForm({ source: "", destination: "", vehicleId: "", driverId: "", cargoWeight: "", plannedDistance: "" });
       fetchData();
     } catch (err: any) {
       showNotification("error", err.message);
@@ -355,7 +331,6 @@ export default function Home() {
     }
   };
 
-  // Reset local search filters on tab switch
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setSearchQuery("");
@@ -363,10 +338,9 @@ export default function Home() {
     setTypeFilter("all");
   };
 
-  // Client-side search filters logic
   const getFilteredVehicles = () => {
     return vehicles.filter((v: any) => {
-      const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             v.registrationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (v.region && v.region.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesStatus = statusFilter === "all" || v.status === statusFilter;
@@ -377,7 +351,7 @@ export default function Home() {
 
   const getFilteredDrivers = () => {
     return drivers.filter((d: any) => {
-      const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || d.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -386,7 +360,7 @@ export default function Home() {
 
   const getFilteredTrips = () => {
     return trips.filter((t: any) => {
-      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             t.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             t.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (t.vehicle?.name && t.vehicle.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -397,10 +371,22 @@ export default function Home() {
   };
 
   if (!currentUser) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading Session...</div>;
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center text-sm font-medium"
+        style={{ background: "var(--bg-base)", color: "var(--text-muted)" }}
+      >
+        <div className="flex items-center gap-3">
+          <svg className="w-5 h-5 animate-spin" style={{ color: "#2563eb" }} fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          Loading Session...
+        </div>
+      </div>
+    );
   }
 
-  // RBAC Tab Restriction Helper
   const isTabAllowed = (tab: string) => {
     if (currentUser.role === 'driver') {
       return tab === 'dashboard' || tab === 'trips';
@@ -408,161 +394,403 @@ export default function Home() {
     return true;
   };
 
-  // Chart data calculations
   const totalVehiclesCount = vehicles.length;
   const availableCount = vehicles.filter((v: any) => v.status === "available").length;
   const onTripCount = vehicles.filter((v: any) => v.status === "on_trip").length;
   const inShopCount = vehicles.filter((v: any) => v.status === "in_shop").length;
   const retiredCount = vehicles.filter((v: any) => v.status === "retired").length;
 
+  // Shared styles
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "var(--bg-base)",
+    border: "1px solid var(--border-default)",
+    borderRadius: "8px",
+    padding: "9px 14px",
+    color: "var(--text-primary)",
+    fontSize: "13px",
+    outline: "none",
+    marginTop: "6px",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "11px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "var(--text-muted)",
+  };
+
+  const navItems = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/>,
+    },
+    {
+      id: "vehicles",
+      label: "Fleet Vehicles",
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/>,
+    },
+    {
+      id: "drivers",
+      label: "Drivers Directory",
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>,
+    },
+    {
+      id: "trips",
+      label: "Trip Planner",
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>,
+    },
+  ];
+
+  const getStatusBadge = (status: string, type: "vehicle" | "driver" | "trip") => {
+    const map: Record<string, { bg: string; color: string; border: string }> = {
+      available:  { bg: "rgba(16,185,129,0.08)",  color: "#34d399", border: "rgba(16,185,129,0.2)"  },
+      on_trip:    { bg: "rgba(6,182,212,0.08)",   color: "#22d3ee", border: "rgba(6,182,212,0.2)"   },
+      in_shop:    { bg: "rgba(245,158,11,0.08)",  color: "#fbbf24", border: "rgba(245,158,11,0.2)"  },
+      retired:    { bg: "rgba(244,63,94,0.08)",   color: "#fb7185", border: "rgba(244,63,94,0.2)"   },
+      off_duty:   { bg: "rgba(100,116,139,0.1)",  color: "#94a3b8", border: "rgba(100,116,139,0.2)" },
+      suspended:  { bg: "rgba(244,63,94,0.08)",   color: "#fb7185", border: "rgba(244,63,94,0.2)"   },
+      draft:      { bg: "rgba(100,116,139,0.1)",  color: "#94a3b8", border: "rgba(100,116,139,0.2)" },
+      dispatched: { bg: "rgba(6,182,212,0.08)",   color: "#22d3ee", border: "rgba(6,182,212,0.2)"   },
+      completed:  { bg: "rgba(16,185,129,0.08)",  color: "#34d399", border: "rgba(16,185,129,0.2)"  },
+      cancelled:  { bg: "rgba(244,63,94,0.08)",   color: "#fb7185", border: "rgba(244,63,94,0.2)"   },
+    };
+    const s = map[status] || map["draft"];
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "3px 10px",
+          borderRadius: "999px",
+          fontSize: "10px",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          background: s.bg,
+          color: s.color,
+          border: `1px solid ${s.border}`,
+        }}
+      >
+        {status}
+      </span>
+    );
+  };
+
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
-      
-      {/* Alert Notifications */}
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: "var(--bg-base)", color: "var(--text-primary)", fontFamily: "'Inter', sans-serif" }}
+    >
+
+      {/* ── Toast Notifications ── */}
       {errorMsg && (
-        <div className="fixed top-4 right-4 z-50 bg-rose-600 text-white px-5 py-3 rounded-lg shadow-2xl flex items-center gap-3 border border-rose-500 animate-bounce">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-          <span className="font-medium">{errorMsg}</span>
+        <div
+          className="fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-semibold animate-fade-in"
+          style={{
+            background: "rgba(244,63,94,0.12)",
+            border: "1px solid rgba(244,63,94,0.3)",
+            color: "#fb7185",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          {errorMsg}
         </div>
       )}
       {successMsg && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-2xl flex items-center gap-3 border border-emerald-500 animate-pulse">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span className="font-medium">{successMsg}</span>
+        <div
+          className="fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-semibold animate-fade-in"
+          style={{
+            background: "rgba(16,185,129,0.1)",
+            border: "1px solid rgba(16,185,129,0.25)",
+            color: "#34d399",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {successMsg}
         </div>
       )}
 
-      {/* Sidebar Layout */}
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0">
+      {/* ── Sidebar ── */}
+      <aside
+        className="flex flex-col justify-between shrink-0"
+        style={{
+          width: "var(--sidebar-width)",
+          background: "var(--bg-surface)",
+          borderRight: "1px solid var(--border-subtle)",
+        }}
+      >
         <div>
-          {/* Logo Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-1-1h-7m7 5H3"/></svg>
-            <span className="text-xl font-bold tracking-tight text-white uppercase font-sans">TransitOps</span>
+          {/* Logo */}
+          <div
+            className="flex items-center gap-3 p-5"
+            style={{
+              background: "linear-gradient(135deg, #0f1e40 0%, #0d1a36 100%)",
+              borderBottom: "1px solid var(--border-subtle)",
+            }}
+          >
+            <div
+              className="p-2 rounded-xl shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+                boxShadow: "0 4px 12px rgba(37,99,235,0.4)",
+              }}
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-1-1h-7m7 5H3"/>
+              </svg>
+            </div>
+            <div>
+              <div className="text-sm font-bold tracking-tight text-white">TransitOps</div>
+              <div className="text-[10px] font-medium" style={{ color: "#60a5fa", opacity: 0.8 }}>Enterprise Platform</div>
+            </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
-            <button
-              onClick={() => handleTabChange("dashboard")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "dashboard" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
-              Dashboard
-            </button>
-            {isTabAllowed("vehicles") && (
-              <button
-                onClick={() => handleTabChange("vehicles")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "vehicles" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/></svg>
-                Fleet Vehicles
-              </button>
-            )}
-            {isTabAllowed("drivers") && (
-              <button
-                onClick={() => handleTabChange("drivers")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "drivers" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                Drivers Directory
-              </button>
-            )}
-            {isTabAllowed("trips") && (
-              <button
-                onClick={() => handleTabChange("trips")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "trips" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                Trip Planner
-              </button>
+          {/* Nav */}
+          <nav className="p-3 space-y-1">
+            {navItems.map(item =>
+              isTabAllowed(item.id) ? (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    textAlign: "left",
+                    fontSize: "13px",
+                    fontWeight: activeTab === item.id ? 600 : 500,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    background: activeTab === item.id
+                      ? "linear-gradient(135deg, rgba(29,78,216,0.35) 0%, rgba(37,99,235,0.25) 100%)"
+                      : "transparent",
+                    color: activeTab === item.id ? "#93c5fd" : "var(--text-muted)",
+                    borderLeft: activeTab === item.id ? "2px solid #2563eb" : "2px solid transparent",
+                    boxShadow: activeTab === item.id ? "0 2px 12px rgba(37,99,235,0.15)" : "none",
+                  }}
+                >
+                  <svg className="w-4.5 h-4.5 shrink-0" style={{ width: "18px", height: "18px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {item.icon}
+                  </svg>
+                  {item.label}
+                </button>
+              ) : null
             )}
           </nav>
         </div>
 
-        {/* Footer profile & logout */}
-        <div className="p-4 border-t border-slate-800 text-slate-400 text-xs flex flex-col gap-3 bg-slate-900/50">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-slate-500 uppercase tracking-wider font-bold text-[10px]">User Account</span>
-            <div className="font-semibold text-slate-200">{currentUser.name}</div>
-            <div className="text-slate-500 font-mono text-[10px]">{currentUser.email}</div>
-            <div className="mt-1"><span className="bg-slate-800 text-violet-400 font-bold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide border border-violet-500/20">{currentUser.role}</span></div>
+        {/* User Profile */}
+        <div
+          className="p-4"
+          style={{ borderTop: "1px solid var(--border-subtle)" }}
+        >
+          <div className="mb-3">
+            <div className="text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted)" }}>
+              Signed In As
+            </div>
+            <div className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {currentUser.name}
+            </div>
+            <div className="text-[11px] font-mono mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
+              {currentUser.email}
+            </div>
+            <div className="mt-2">
+              <span
+                className="badge"
+                style={{
+                  background: "rgba(37,99,235,0.12)",
+                  color: "#60a5fa",
+                  border: "1px solid rgba(37,99,235,0.25)",
+                }}
+              >
+                {currentUser.role}
+              </span>
+            </div>
           </div>
-          
-          <button 
+          <button
             onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-rose-950/30 hover:text-rose-400 hover:border-rose-900/40 text-slate-300 font-bold py-2 rounded-lg border border-slate-700 transition-all text-xs"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              padding: "9px 14px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 600,
+              background: "var(--bg-elevated)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border-default)",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "rgba(244,63,94,0.08)";
+              (e.currentTarget as HTMLButtonElement).style.color = "#fb7185";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(244,63,94,0.25)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-elevated)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-default)";
+            }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
             Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Main Panel */}
+      {/* ── Main Panel ── */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/40">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-slate-100 capitalize">{activeTab}</h1>
-            {loading && <span className="w-2 h-2 rounded-full bg-violet-500 animate-ping ml-2"/>}
+
+        {/* Top Header */}
+        <header
+          className="flex items-center justify-between px-8"
+          style={{
+            height: "60px",
+            background: "var(--bg-surface)",
+            borderBottom: "1px solid var(--border-subtle)",
+            flexShrink: 0,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <h1
+              className="text-lg font-semibold capitalize"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {activeTab === "dashboard" ? "Operations Dashboard" :
+               activeTab === "vehicles"  ? "Fleet Vehicles" :
+               activeTab === "drivers"   ? "Drivers Directory" : "Trip Planner"}
+            </h1>
+            {loading && (
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full ml-1"
+                style={{ background: "#2563eb", animation: "pulseGlow 1.2s ease-in-out infinite" }}
+              />
+            )}
           </div>
 
-          <div className="flex gap-3">
-            <button 
+          <div className="flex items-center gap-2.5">
+            <button
               onClick={() => fetchData()}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm transition-all border border-slate-700"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 14px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontWeight: 600,
+                background: "var(--bg-elevated)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-default)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2M4 9h5v5"/></svg>
-              Sync Data
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2M4 9h5v5"/>
+              </svg>
+              Sync
             </button>
-            
-            {/* CSV EXPORT BUTTONS */}
-            {activeTab === "vehicles" && (
-              <button 
-                onClick={() => handleExportCSV(vehicles, "vehicles_registry.csv")}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+
+            {/* CSV Export */}
+            {(activeTab === "vehicles" || activeTab === "drivers" || activeTab === "trips") && (
+              <button
+                onClick={() => {
+                  if (activeTab === "vehicles") handleExportCSV(vehicles, "vehicles_registry.csv");
+                  else if (activeTab === "drivers") handleExportCSV(drivers, "drivers_directory.csv");
+                  else handleExportCSV(trips, "trips_logs.csv");
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  background: "rgba(16,185,129,0.08)",
+                  color: "#34d399",
+                  border: "1px solid rgba(16,185,129,0.2)",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
               >
-                Export CSV
-              </button>
-            )}
-            {activeTab === "drivers" && (
-              <button 
-                onClick={() => handleExportCSV(drivers, "drivers_directory.csv")}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-              >
-                Export CSV
-              </button>
-            )}
-            {activeTab === "trips" && (
-              <button 
-                onClick={() => handleExportCSV(trips, "trips_logs.csv")}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
                 Export CSV
               </button>
             )}
 
-            {currentUser.role !== 'driver' && currentUser.role !== 'safety' && currentUser.role !== 'analyst' && (
-              <button 
+            {/* Add / Plan Button */}
+            {(currentUser.role !== 'driver' && currentUser.role !== 'safety' && currentUser.role !== 'analyst') && (
+              <button
                 onClick={() => {
                   if (activeTab === "vehicles") setShowVehicleModal(true);
                   else if (activeTab === "drivers") setShowDriverModal(true);
                   else setShowTripModal(true);
                 }}
-                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all"
+                className="btn-primary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 16px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 10px rgba(37,99,235,0.3)",
+                  transition: "all 0.2s",
+                }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
+                </svg>
                 {activeTab === "vehicles" ? "Register Vehicle" : activeTab === "drivers" ? "Add Driver" : "Plan Trip"}
               </button>
             )}
             {currentUser.role === 'driver' && activeTab === "trips" && (
-              <button 
+              <button
                 onClick={() => setShowTripModal(true)}
-                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all"
+                className="btn-primary"
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px",
+                  padding: "7px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+                  background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+                  color: "#fff", border: "none", cursor: "pointer",
+                  boxShadow: "0 2px 10px rgba(37,99,235,0.3)",
+                }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
+                </svg>
                 Plan Trip
               </button>
             )}
@@ -570,140 +798,195 @@ export default function Home() {
         </header>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-8">
-          
-          {/* TAB 1: DASHBOARD */}
+        <div
+          className="flex-1 overflow-y-auto p-7"
+          style={{ background: "var(--bg-base)" }}
+        >
+
+          {/* ── DASHBOARD TAB ── */}
           {activeTab === "dashboard" && (
-            <div className="space-y-8 animate-fade-in">
-              {/* KPIs Grid */}
+            <div className="space-y-7 animate-fade-in">
+
+              {/* KPI Cards */}
               {currentUser.role !== 'driver' && currentUser.role !== 'safety' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  
-                  {/* Active Vehicles */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-violet-500/50 transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-violet-500/20 transition-all"/>
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Active Vehicles</span>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span className="text-4xl font-extrabold text-slate-100">{kpis.active_vehicles}</span>
-                      <span className="text-xs text-slate-500">In Fleet</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {[
+                    {
+                      label: "Active Vehicles",
+                      value: kpis.active_vehicles,
+                      suffix: "In Fleet",
+                      color: "#60a5fa",
+                      glow: "rgba(37,99,235,0.2)",
+                      border: "rgba(37,99,235,0.25)",
+                      bg: "rgba(37,99,235,0.06)",
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/>
+                    },
+                    {
+                      label: "Available",
+                      value: kpis.available_vehicles,
+                      suffix: "Ready",
+                      color: "#34d399",
+                      glow: "rgba(16,185,129,0.2)",
+                      border: "rgba(16,185,129,0.25)",
+                      bg: "rgba(16,185,129,0.06)",
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    },
+                    {
+                      label: "In Maintenance",
+                      value: kpis.in_maintenance,
+                      suffix: "In Shop",
+                      color: "#fbbf24",
+                      glow: "rgba(245,158,11,0.2)",
+                      border: "rgba(245,158,11,0.25)",
+                      bg: "rgba(245,158,11,0.06)",
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>,
+                    },
+                    {
+                      label: "Fleet Utilization",
+                      value: `${kpis.fleet_utilization.toFixed(1)}%`,
+                      suffix: "Active",
+                      color: "#a78bfa",
+                      glow: "rgba(139,92,246,0.2)",
+                      border: "rgba(139,92,246,0.25)",
+                      bg: "rgba(139,92,246,0.06)",
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    },
+                  ].map(card => (
+                    <div
+                      key={card.label}
+                      className="enterprise-card"
+                      style={{
+                        padding: "24px",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* Left accent bar */}
+                      <div style={{
+                        position: "absolute", left: 0, top: 0, bottom: 0,
+                        width: "3px", background: card.color, borderRadius: "0 2px 2px 0",
+                      }} />
+                      {/* Glow orb */}
+                      <div style={{
+                        position: "absolute", top: "-20px", right: "-20px",
+                        width: "80px", height: "80px", borderRadius: "50%",
+                        background: card.glow, filter: "blur(20px)",
+                      }} />
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-muted)" }}>
+                            {card.label}
+                          </div>
+                          <div className="text-4xl font-extrabold" style={{ color: card.color }}>
+                            {card.value}
+                          </div>
+                          <div className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
+                            {card.suffix}
+                          </div>
+                        </div>
+                        <div
+                          className="p-2.5 rounded-xl"
+                          style={{ background: card.bg, border: `1px solid ${card.border}` }}
+                        >
+                          <svg className="w-5 h-5" style={{ color: card.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {card.icon}
+                          </svg>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Available Vehicles */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-emerald-500/20 transition-all"/>
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Available Vehicles</span>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span className="text-4xl font-extrabold text-emerald-400">{kpis.available_vehicles}</span>
-                      <span className="text-xs text-slate-500">Ready</span>
-                    </div>
-                  </div>
-
-                  {/* Vehicles in Maintenance */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-amber-500/20 transition-all"/>
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">In Maintenance</span>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span className="text-4xl font-extrabold text-amber-500">{kpis.in_maintenance}</span>
-                      <span className="text-xs text-slate-500">In Shop</span>
-                    </div>
-                  </div>
-
-                  {/* Fleet Utilization */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl translate-x-4 -translate-y-4 group-hover:bg-indigo-500/20 transition-all"/>
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Fleet Utilization</span>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span className="text-4xl font-extrabold text-indigo-400">{kpis.fleet_utilization.toFixed(1)}%</span>
-                      <span className="text-xs text-slate-500">Active Logs</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               ) : (
-                /* Restricted Dashboard for Driver / Safety */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Active Dispatched Trips</span>
-                    <div className="text-4xl font-extrabold text-sky-400 mt-4">{kpis.active_trips}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl">
+                  <div className="enterprise-card" style={{ padding: "24px" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#22d3ee" }} />
+                    <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-muted)" }}>Active Dispatched Trips</div>
+                    <div className="text-4xl font-extrabold" style={{ color: "#22d3ee" }}>{kpis.active_trips}</div>
                   </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                    <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Planned Draft Trips</span>
-                    <div className="text-4xl font-extrabold text-slate-400 mt-4">{kpis.pending_trips}</div>
+                  <div className="enterprise-card" style={{ padding: "24px" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#94a3b8" }} />
+                    <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-muted)" }}>Planned Draft Trips</div>
+                    <div className="text-4xl font-extrabold" style={{ color: "var(--text-secondary)" }}>{kpis.pending_trips}</div>
                   </div>
                 </div>
               )}
 
-              {/* CHARTS SECTION (Only for Managers and Analysts) */}
+              {/* Charts */}
               {currentUser.role !== 'driver' && currentUser.role !== 'safety' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Chart 1: Vehicle Status Distribution (SVG Circular Donut Chart) */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                    <h3 className="text-lg font-bold text-slate-200 mb-6">Vehicle Status Distribution</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                  {/* Donut Chart */}
+                  <div
+                    className="enterprise-card"
+                    style={{ padding: "24px" }}
+                  >
+                    <h3 className="text-sm font-semibold mb-6" style={{ color: "var(--text-primary)" }}>
+                      Vehicle Status Distribution
+                    </h3>
                     <div className="flex items-center justify-around gap-6">
-                      <div className="relative w-40 h-40">
-                        {/* Inline custom SVG Donut representing dynamic fractions */}
+                      <div className="relative w-36 h-36">
                         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1e293b" strokeWidth="3"/>
-                          {/* Available fraction (Green) */}
-                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="3.2" 
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1a2744" strokeWidth="3"/>
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="3.2"
                             strokeDasharray={`${totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0)}`}
                             strokeDashoffset="0"
                           />
-                          {/* On Trip fraction (Sky Blue) */}
-                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#0ea5e9" strokeWidth="3.2" 
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" strokeWidth="3.2"
                             strokeDasharray={`${totalVehiclesCount > 0 ? (onTripCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (onTripCount / totalVehiclesCount) * 100 : 0)}`}
                             strokeDashoffset={`-${totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0}`}
                           />
-                          {/* In Shop fraction (Amber) */}
-                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="3.2" 
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="3.2"
                             strokeDasharray={`${totalVehiclesCount > 0 ? (inShopCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (inShopCount / totalVehiclesCount) * 100 : 0)}`}
                             strokeDashoffset={`-${totalVehiclesCount > 0 ? ((availableCount + onTripCount) / totalVehiclesCount) * 100 : 0}`}
                           />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-extrabold text-slate-100">{totalVehiclesCount}</span>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Vehicles</span>
+                          <span className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>{totalVehiclesCount}</span>
+                          <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: "var(--text-muted)" }}>Total</span>
                         </div>
                       </div>
-
-                      {/* Legend details */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-emerald-500"/>
-                          <span className="text-sm font-medium text-slate-300">Available: <strong>{availableCount}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-sky-500"/>
-                          <span className="text-sm font-medium text-slate-300">On Trip: <strong>{onTripCount}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-amber-500"/>
-                          <span className="text-sm font-medium text-slate-300">In Shop: <strong>{inShopCount}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-slate-600"/>
-                          <span className="text-sm font-medium text-slate-300">Retired: <strong>{retiredCount}</strong></span>
-                        </div>
+                      <div className="space-y-3">
+                        {[
+                          { label: "Available", count: availableCount, color: "#10b981" },
+                          { label: "On Trip",   count: onTripCount,   color: "#06b6d4" },
+                          { label: "In Shop",   count: inShopCount,   color: "#f59e0b" },
+                          { label: "Retired",   count: retiredCount,  color: "#475569" },
+                        ].map(item => (
+                          <div key={item.label} className="flex items-center gap-2.5">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }}/>
+                            <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                              {item.label}: <strong style={{ color: "var(--text-primary)" }}>{item.count}</strong>
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Chart 2: Operational Cost per Vehicle (Custom Bar Chart Layout) */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                    <h3 className="text-lg font-bold text-slate-200 mb-6">Operational Cost per Vehicle</h3>
+                  {/* Bar Chart */}
+                  <div className="enterprise-card" style={{ padding: "24px" }}>
+                    <h3 className="text-sm font-semibold mb-6" style={{ color: "var(--text-primary)" }}>
+                      Operational Cost per Vehicle
+                    </h3>
                     <div className="space-y-4">
                       {vehicles.slice(0, 5).map((v: any) => {
                         const cost = v.total_operational_cost || 0;
                         const maxCost = Math.max(...vehicles.map((veh: any) => veh.total_operational_cost || 0), 100);
-                        const percentage = (cost / maxCost) * 100;
+                        const pct = (cost / maxCost) * 100;
                         return (
-                          <div key={v.id} className="space-y-1">
-                            <div className="flex justify-between text-sm font-medium text-slate-300">
+                          <div key={v.id} className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                               <span>{v.name}</span>
-                              <span className="font-mono text-violet-400 font-bold">${cost.toFixed(2)}</span>
+                              <span className="font-mono font-bold" style={{ color: "#60a5fa" }}>${cost.toFixed(2)}</span>
                             </div>
-                            <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800/80">
-                              <div className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}/>
+                            <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: "linear-gradient(90deg, #1d4ed8, #2563eb, #38bdf8)",
+                                }}
+                              />
                             </div>
                           </div>
                         );
@@ -713,87 +996,80 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Lower Section: Recent Trips */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-slate-200">
+              {/* Recent Trips Table */}
+              <div
+                className="enterprise-card"
+                style={{ borderRadius: "12px", overflow: "hidden" }}
+              >
+                <div
+                  className="flex justify-between items-center px-6 py-4"
+                  style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                >
+                  <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                     {currentUser.role === 'driver' ? "My Assigned Trips" : "Recent Trip Operations (Last 10)"}
                   </h3>
                   {isTabAllowed("trips") && (
-                    <button onClick={() => setActiveTab("trips")} className="text-violet-400 hover:text-violet-300 text-sm font-semibold flex items-center gap-1 transition-all">
-                      View All Trips &rarr;
+                    <button
+                      onClick={() => setActiveTab("trips")}
+                      className="text-xs font-semibold flex items-center gap-1 transition-colors"
+                      style={{ color: "#60a5fa", background: "none", border: "none", cursor: "pointer" }}
+                    >
+                      View All &rarr;
                     </button>
                   )}
                 </div>
-
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left">
                     <thead>
-                      <tr className="text-slate-400 text-xs font-semibold uppercase tracking-wider bg-slate-950/40 border-b border-slate-800">
-                        <th className="px-6 py-4">Reference</th>
-                        <th className="px-6 py-4">Route</th>
-                        <th className="px-6 py-4">Vehicle</th>
-                        <th className="px-6 py-4">Driver</th>
-                        <th className="px-6 py-4">Weight</th>
-                        <th className="px-6 py-4">Distance</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                      <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
+                        {["Reference", "Route", "Vehicle", "Driver", "Weight", "Distance", "Status", "Actions"].map(h => (
+                          <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
+                    <tbody>
                       {kpis.recent_trips.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="text-center py-10 text-slate-500 font-medium">No trips planned yet. Click "Plan Trip" to begin!</td>
+                          <td colSpan={8} className="text-center py-10 text-sm" style={{ color: "var(--text-muted)" }}>
+                            No trips planned yet. Click "Plan Trip" to begin.
+                          </td>
                         </tr>
                       ) : (
                         kpis.recent_trips.map((trip: any) => (
-                          <tr key={trip.id} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="px-6 py-4 font-mono font-bold text-slate-100">{trip.name}</td>
-                            <td className="px-6 py-4">
-                              <span className="font-semibold text-slate-200">{trip.source}</span>
-                              <span className="mx-2 text-slate-500">&rarr;</span>
-                              <span className="font-semibold text-slate-200">{trip.destination}</span>
+                          <tr
+                            key={trip.id}
+                            className="transition-colors"
+                            style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                            onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "var(--bg-elevated)"}
+                            onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
+                          >
+                            <td className="px-5 py-4 font-mono font-bold text-sm" style={{ color: "var(--text-primary)" }}>{trip.name}</td>
+                            <td className="px-5 py-4 text-sm">
+                              <span style={{ color: "var(--text-secondary)" }}>{trip.source}</span>
+                              <span className="mx-1.5" style={{ color: "var(--text-muted)" }}>→</span>
+                              <span style={{ color: "var(--text-secondary)" }}>{trip.destination}</span>
                             </td>
-                            <td className="px-6 py-4 text-slate-400">{trip.vehicle?.name || "N/A"}</td>
-                            <td className="px-6 py-4 text-slate-400">{trip.driver?.name || "N/A"}</td>
-                            <td className="px-6 py-4">{trip.cargoWeight} kg</td>
-                            <td className="px-6 py-4">{trip.plannedDistance} km</td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                trip.state === "draft" ? "bg-slate-800 text-slate-400 border border-slate-700" :
-                                trip.state === "dispatched" ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
-                                trip.state === "completed" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                                "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                              }`}>
-                                {trip.state}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-2">
+                            <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{trip.vehicle?.name || "N/A"}</td>
+                            <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{trip.driver?.name || "N/A"}</td>
+                            <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{trip.cargoWeight} kg</td>
+                            <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{trip.plannedDistance} km</td>
+                            <td className="px-5 py-4">{getStatusBadge(trip.state, "trip")}</td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
                                 {trip.state === "draft" && (
-                                  <button 
-                                    onClick={() => handleDispatchTrip(trip.id)}
-                                    className="bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-all shadow-md shadow-violet-600/10"
-                                  >
+                                  <button onClick={() => handleDispatchTrip(trip.id)} style={{ padding: "4px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: "rgba(37,99,235,0.12)", color: "#60a5fa", border: "1px solid rgba(37,99,235,0.25)", cursor: "pointer" }}>
                                     Dispatch
                                   </button>
                                 )}
                                 {trip.state === "dispatched" && (
-                                  <button 
-                                    onClick={() => {
-                                      setSelectedTrip(trip);
-                                      setShowCompleteModal(true);
-                                    }}
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-all shadow-md shadow-emerald-600/10"
-                                  >
+                                  <button onClick={() => { setSelectedTrip(trip); setShowCompleteModal(true); }} style={{ padding: "4px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)", cursor: "pointer" }}>
                                     Complete
                                   </button>
                                 )}
                                 {(trip.state === "draft" || trip.state === "dispatched") && (
-                                  <button 
-                                    onClick={() => handleCancelTrip(trip.id)}
-                                    className="bg-slate-800 hover:bg-rose-950/40 hover:text-rose-400 text-slate-400 text-xs font-semibold px-2.5 py-1.5 rounded-md border border-slate-700 hover:border-rose-900/50 transition-all"
-                                  >
+                                  <button onClick={() => handleCancelTrip(trip.id)} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-default)", cursor: "pointer" }}>
                                     Cancel
                                   </button>
                                 )}
@@ -809,102 +1085,71 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 2: VEHICLES */}
+          {/* ── VEHICLES TAB ── */}
           {activeTab === "vehicles" && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Search & Filter Header */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap gap-4 items-center">
-                <div className="flex-1 min-w-[200px]">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by vehicle name, registration number, or region..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  />
-                </div>
-                <div className="w-48">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="available">Available</option>
-                    <option value="on_trip">On Trip</option>
-                    <option value="in_shop">In Shop</option>
-                    <option value="retired">Retired</option>
-                  </select>
-                </div>
-                <div className="w-48">
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="van">Van</option>
-                    <option value="truck">Truck</option>
-                    <option value="bike">Bike</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+            <div className="space-y-5 animate-fade-in">
+              {/* Filters */}
+              <div
+                className="flex flex-wrap gap-3 items-center p-4 rounded-xl"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+              >
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by vehicle name, registration, or region..."
+                  style={{ ...inputStyle, flex: "1", minWidth: "200px", marginTop: 0 }}
+                />
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: "160px", marginTop: 0 }}>
+                  <option value="all">All Statuses</option>
+                  <option value="available">Available</option>
+                  <option value="on_trip">On Trip</option>
+                  <option value="in_shop">In Shop</option>
+                  <option value="retired">Retired</option>
+                </select>
+                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ ...inputStyle, width: "140px", marginTop: 0 }}>
+                  <option value="all">All Types</option>
+                  <option value="van">Van</option>
+                  <option value="truck">Truck</option>
+                  <option value="bike">Bike</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
 
-              {/* Grid Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {getFilteredVehicles().map((v: any) => (
-                  <div key={v.id} className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all">
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                          v.status === "available" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                          v.status === "on_trip" ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
-                          v.status === "in_shop" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                          "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                        }`}>
-                          {v.status}
-                        </span>
-                        {currentUser.role === 'manager' && (
-                          <button 
-                            onClick={() => handleDeleteVehicle(v.id)}
-                            className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                          </button>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-bold text-slate-100">{v.name}</h3>
-                      <div className="text-sm font-mono text-slate-400 mt-1">{v.registrationNumber}</div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-6 border-t border-b border-slate-800/80 py-4">
-                        <div>
-                          <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Max Load</div>
-                          <div className="text-sm font-medium text-slate-200 mt-1">{v.maxLoadCapacity} kg</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Odometer</div>
-                          <div className="text-sm font-medium text-slate-200 mt-1">{v.odometer} km</div>
-                        </div>
-                        {currentUser.role !== 'driver' && currentUser.role !== 'safety' && (
-                          <>
-                            <div>
-                              <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Operational Cost</div>
-                              <div className="text-sm font-medium text-slate-200 mt-1">${v.total_operational_cost?.toFixed(2) || "0.00"}</div>
-                            </div>
-                            <div>
-                              <div className="text-slate-500 text-xs uppercase tracking-wider font-semibold">ROI Impact</div>
-                              <div className="text-sm font-bold text-violet-400 mt-1">{v.roi?.toFixed(1) || "0.0"}%</div>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                  <div key={v.id} className="enterprise-card" style={{ padding: "20px" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: v.status === "available" ? "#10b981" : v.status === "on_trip" ? "#06b6d4" : v.status === "in_shop" ? "#f59e0b" : "#475569" }} />
+                    <div className="flex justify-between items-start mb-4">
+                      {getStatusBadge(v.status, "vehicle")}
+                      {currentUser.role === 'manager' && (
+                        <button onClick={() => handleDeleteVehicle(v.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }}>
+                          <svg className="w-4.5 h-4.5" style={{ width: "18px", height: "18px", color: "inherit" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                        </button>
+                      )}
                     </div>
-
-                    <div className="text-xs text-slate-500 mt-4 flex justify-between items-center">
-                      <span>Region: <strong>{v.region || "Global"}</strong></span>
-                      <span className="capitalize">Type: <strong>{v.vehicleType}</strong></span>
+                    <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{v.name}</h3>
+                    <div className="text-xs font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>{v.registrationNumber}</div>
+                    <div className="grid grid-cols-2 gap-3 mt-4 pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      {[
+                        { label: "Max Load", val: `${v.maxLoadCapacity} kg` },
+                        { label: "Odometer", val: `${v.odometer} km` },
+                        ...(currentUser.role !== 'driver' && currentUser.role !== 'safety' ? [
+                          { label: "Op. Cost", val: `$${v.total_operational_cost?.toFixed(2) || "0.00"}` },
+                          { label: "ROI", val: `${v.roi?.toFixed(1) || "0.0"}%`, highlight: true },
+                        ] : []),
+                      ].map(item => (
+                        <div key={item.label}>
+                          <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{item.label}</div>
+                          <div className="text-sm font-semibold mt-0.5" style={{ color: (item as any).highlight ? "#60a5fa" : "var(--text-secondary)" }}>{item.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-3 pt-3 text-xs" style={{ color: "var(--text-muted)", borderTop: "1px solid var(--border-subtle)" }}>
+                      <span>Region: <strong style={{ color: "var(--text-secondary)" }}>{v.region || "Global"}</strong></span>
+                      <span className="capitalize">Type: <strong style={{ color: "var(--text-secondary)" }}>{v.vehicleType}</strong></span>
                     </div>
                   </div>
                 ))}
@@ -912,91 +1157,67 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 3: DRIVERS */}
+          {/* ── DRIVERS TAB ── */}
           {activeTab === "drivers" && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Search & Filter Header */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex gap-4 items-center">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by driver name or license number..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  />
-                </div>
-                <div className="w-48">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="available">Available</option>
-                    <option value="on_trip">On Trip</option>
-                    <option value="off_duty">Off Duty</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                </div>
+            <div className="space-y-5 animate-fade-in">
+              <div className="flex gap-3 items-center p-4 rounded-xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search by driver name or license number..." style={{ ...inputStyle, flex: "1", marginTop: 0 }} />
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: "160px", marginTop: 0 }}>
+                  <option value="all">All Statuses</option>
+                  <option value="available">Available</option>
+                  <option value="on_trip">On Trip</option>
+                  <option value="off_duty">Off Duty</option>
+                  <option value="suspended">Suspended</option>
+                </select>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+              <div className="enterprise-card" style={{ borderRadius: "12px", overflow: "hidden" }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left">
                     <thead>
-                      <tr className="text-slate-400 text-xs font-semibold uppercase tracking-wider bg-slate-950/40 border-b border-slate-800">
-                        <th className="px-6 py-4">Name</th>
-                        <th className="px-6 py-4">License Number</th>
-                        <th className="px-6 py-4">Category</th>
-                        <th className="px-6 py-4">License Expiration</th>
-                        <th className="px-6 py-4">Contact</th>
-                        {currentUser.role !== 'driver' && <th className="px-6 py-4">Safety Score</th>}
-                        <th className="px-6 py-4">Status</th>
-                        {currentUser.role === 'manager' && <th className="px-6 py-4 text-right">Delete</th>}
+                      <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
+                        {["Name", "License Number", "Category", "Expiry Date", "Contact", ...(currentUser.role !== 'driver' ? ["Safety Score"] : []), "Status", ...(currentUser.role === 'manager' ? ["Delete"] : [])].map(h => (
+                          <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
+                    <tbody>
                       {getFilteredDrivers().map((d: any) => (
-                        <tr key={d.id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="px-6 py-4 font-semibold text-slate-100">{d.name}</td>
-                          <td className="px-6 py-4 font-mono">{d.licenseNumber}</td>
-                          <td className="px-6 py-4 text-slate-400">{d.licenseCategory || "Standard"}</td>
-                          <td className="px-6 py-4">
-                            <span className={new Date(d.licenseExpiryDate) < new Date() ? "text-rose-500 font-bold" : "text-slate-300"}>
+                        <tr
+                          key={d.id}
+                          className="transition-colors"
+                          style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                          onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "var(--bg-elevated)"}
+                          onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
+                        >
+                          <td className="px-5 py-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{d.name}</td>
+                          <td className="px-5 py-4 font-mono text-xs" style={{ color: "var(--text-secondary)" }}>{d.licenseNumber}</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.licenseCategory || "Standard"}</td>
+                          <td className="px-5 py-4 text-sm">
+                            <span style={{ color: new Date(d.licenseExpiryDate) < new Date() ? "#fb7185" : "var(--text-secondary)", fontWeight: new Date(d.licenseExpiryDate) < new Date() ? 700 : 500 }}>
                               {new Date(d.licenseExpiryDate).toLocaleDateString()}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-slate-400">{d.contactNumber || "N/A"}</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.contactNumber || "N/A"}</td>
                           {currentUser.role !== 'driver' && (
-                            <td className="px-6 py-4">
+                            <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
-                                <span className={`font-bold ${d.safetyScore >= 80 ? "text-emerald-400" : d.safetyScore >= 50 ? "text-amber-500" : "text-rose-500"}`}>
+                                <span className="text-sm font-bold" style={{ color: d.safetyScore >= 80 ? "#34d399" : d.safetyScore >= 50 ? "#fbbf24" : "#fb7185" }}>
                                   {d.safetyScore}%
                                 </span>
-                                <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                  <div className={`h-full ${d.safetyScore >= 80 ? "bg-emerald-500" : d.safetyScore >= 50 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${d.safetyScore}%` }}/>
+                                <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+                                  <div className="h-full rounded-full" style={{ width: `${d.safetyScore}%`, background: d.safetyScore >= 80 ? "#10b981" : d.safetyScore >= 50 ? "#f59e0b" : "#f43f5e" }} />
                                 </div>
                               </div>
                             </td>
                           )}
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              d.status === "available" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                              d.status === "on_trip" ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
-                              d.status === "off_duty" ? "bg-slate-800 text-slate-400 border border-slate-700" :
-                              "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                            }`}>
-                              {d.status}
-                            </span>
-                          </td>
+                          <td className="px-5 py-4">{getStatusBadge(d.status, "driver")}</td>
                           {currentUser.role === 'manager' && (
-                            <td className="px-6 py-4 text-right">
-                              <button 
-                                onClick={() => handleDeleteDriver(d.id)}
-                                className="text-slate-500 hover:text-rose-400 p-1 rounded-md transition-colors"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <td className="px-5 py-4 text-right">
+                              <button onClick={() => handleDeleteDriver(d.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                                <svg className="w-4.5 h-4.5" style={{ width: "17px", height: "17px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
                               </button>
                             </td>
                           )}
@@ -1009,103 +1230,61 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 4: TRIPS */}
+          {/* ── TRIPS TAB ── */}
           {activeTab === "trips" && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Search & Filter Header */}
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex gap-4 items-center">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by trip reference, route source/destination, driver or vehicle name..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  />
-                </div>
-                <div className="w-48">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
-                  >
-                    <option value="all">All States</option>
-                    <option value="draft">Draft</option>
-                    <option value="dispatched">Dispatched</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
+            <div className="space-y-5 animate-fade-in">
+              <div className="flex gap-3 items-center p-4 rounded-xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search by trip reference, route, driver or vehicle..." style={{ ...inputStyle, flex: "1", marginTop: 0 }} />
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: "160px", marginTop: 0 }}>
+                  <option value="all">All States</option>
+                  <option value="draft">Draft</option>
+                  <option value="dispatched">Dispatched</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+              <div className="enterprise-card" style={{ borderRadius: "12px", overflow: "hidden" }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left">
                     <thead>
-                      <tr className="text-slate-400 text-xs font-semibold uppercase tracking-wider bg-slate-950/40 border-b border-slate-800">
-                        <th className="px-6 py-4">Reference</th>
-                        <th className="px-6 py-4">Route</th>
-                        <th className="px-6 py-4">Vehicle</th>
-                        <th className="px-6 py-4">Driver</th>
-                        <th className="px-6 py-4">Weight</th>
-                        <th className="px-6 py-4">Planned Dist</th>
-                        <th className="px-6 py-4">Actual Dist</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                      <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
+                        {["Reference", "Route", "Vehicle", "Driver", "Weight", "Planned", "Actual", "Status", "Actions"].map(h => (
+                          <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
+                    <tbody>
                       {getFilteredTrips().map((trip: any) => (
-                        <tr key={trip.id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-slate-100">{trip.name}</td>
-                          <td className="px-6 py-4">
-                            <span className="font-semibold text-slate-200">{trip.source}</span>
-                            <span className="mx-2 text-slate-500">&rarr;</span>
-                            <span className="font-semibold text-slate-200">{trip.destination}</span>
+                        <tr
+                          key={trip.id}
+                          className="transition-colors"
+                          style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                          onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "var(--bg-elevated)"}
+                          onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
+                        >
+                          <td className="px-5 py-4 font-mono font-bold text-sm" style={{ color: "var(--text-primary)" }}>{trip.name}</td>
+                          <td className="px-5 py-4 text-sm">
+                            <span style={{ color: "var(--text-secondary)" }}>{trip.source}</span>
+                            <span className="mx-1.5" style={{ color: "var(--text-muted)" }}>→</span>
+                            <span style={{ color: "var(--text-secondary)" }}>{trip.destination}</span>
                           </td>
-                          <td className="px-6 py-4 text-slate-400">{trip.vehicle?.name || "N/A"}</td>
-                          <td className="px-6 py-4 text-slate-400">{trip.driver?.name || "N/A"}</td>
-                          <td className="px-6 py-4">{trip.cargoWeight} kg</td>
-                          <td className="px-6 py-4">{trip.plannedDistance} km</td>
-                          <td className="px-6 py-4">{trip.actualDistance ? `${trip.actualDistance} km` : "-"}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              trip.state === "draft" ? "bg-slate-800 text-slate-400 border border-slate-700" :
-                              trip.state === "dispatched" ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
-                              trip.state === "completed" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                              "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                            }`}>
-                              {trip.state}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-2">
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{trip.vehicle?.name || "N/A"}</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{trip.driver?.name || "N/A"}</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{trip.cargoWeight} kg</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{trip.plannedDistance} km</td>
+                          <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{trip.actualDistance ? `${trip.actualDistance} km` : "—"}</td>
+                          <td className="px-5 py-4">{getStatusBadge(trip.state, "trip")}</td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-2">
                               {trip.state === "draft" && (
-                                <button 
-                                  onClick={() => handleDispatchTrip(trip.id)}
-                                  className="bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-all shadow-md shadow-violet-600/10"
-                                >
-                                  Dispatch
-                                </button>
+                                <button onClick={() => handleDispatchTrip(trip.id)} style={{ padding: "4px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: "rgba(37,99,235,0.12)", color: "#60a5fa", border: "1px solid rgba(37,99,235,0.25)", cursor: "pointer" }}>Dispatch</button>
                               )}
                               {trip.state === "dispatched" && (
-                                <button 
-                                  onClick={() => {
-                                    setSelectedTrip(trip);
-                                    setShowCompleteModal(true);
-                                  }}
-                                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-all shadow-md shadow-emerald-600/10"
-                                >
-                                  Complete
-                                </button>
+                                <button onClick={() => { setSelectedTrip(trip); setShowCompleteModal(true); }} style={{ padding: "4px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)", cursor: "pointer" }}>Complete</button>
                               )}
                               {(trip.state === "draft" || trip.state === "dispatched") && (
-                                <button 
-                                  onClick={() => handleCancelTrip(trip.id)}
-                                  className="bg-slate-800 hover:bg-rose-950/40 hover:text-rose-400 text-slate-400 text-xs font-semibold px-2.5 py-1.5 rounded-md border border-slate-700 hover:border-rose-900/50 transition-all"
-                                >
-                                  Cancel
-                                </button>
+                                <button onClick={() => handleCancelTrip(trip.id)} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-default)", cursor: "pointer" }}>Cancel</button>
                               )}
                             </div>
                           </td>
@@ -1117,357 +1296,223 @@ export default function Home() {
               </div>
             </div>
           )}
+
         </div>
       </main>
 
-      {/* ==================== REGISTER VEHICLE MODAL ==================== */}
-      {showVehicleModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl animate-scale-up">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <h3 className="text-lg font-bold text-slate-100">Register New Fleet Vehicle</h3>
-              <button onClick={() => setShowVehicleModal(false)} className="text-slate-400 hover:text-slate-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateVehicle} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Vehicle Name / Model</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={vehicleForm.name} 
-                    onChange={e => setVehicleForm({...vehicleForm, name: e.target.value})}
-                    placeholder="e.g. Ford Transit L2H2" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Registration Number</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={vehicleForm.registrationNumber} 
-                    onChange={e => setVehicleForm({...vehicleForm, registrationNumber: e.target.value})}
-                    placeholder="e.g. MH-12-TR-9999" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Vehicle Type</label>
-                  <select 
-                    value={vehicleForm.vehicleType} 
-                    onChange={e => setVehicleForm({...vehicleForm, vehicleType: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  >
-                    <option value="van">Van</option>
-                    <option value="truck">Truck</option>
-                    <option value="bike">Bike</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Max Load Capacity (kg)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    value={vehicleForm.maxLoadCapacity} 
-                    onChange={e => setVehicleForm({...vehicleForm, maxLoadCapacity: e.target.value})}
-                    placeholder="e.g. 3500" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Odometer (km)</label>
-                  <input 
-                    type="number" 
-                    value={vehicleForm.odometer} 
-                    onChange={e => setVehicleForm({...vehicleForm, odometer: e.target.value})}
-                    placeholder="0" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Acquisition Cost ($)</label>
-                  <input 
-                    type="number" 
-                    value={vehicleForm.acquisitionCost} 
-                    onChange={e => setVehicleForm({...vehicleForm, acquisitionCost: e.target.value})}
-                    placeholder="0" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Region</label>
-                  <input 
-                    type="text" 
-                    value={vehicleForm.region} 
-                    onChange={e => setVehicleForm({...vehicleForm, region: e.target.value})}
-                    placeholder="e.g. North Region" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
+      {/* ============================================================
+          MODALS
+          ============================================================ */}
+      {/* Modal overlay + card shared styles */}
+      {[
+        {
+          show: showVehicleModal,
+          title: "Register New Fleet Vehicle",
+          onClose: () => setShowVehicleModal(false),
+          onSubmit: handleCreateVehicle,
+          submitLabel: "Register Vehicle",
+          submitColor: "#2563eb",
+          body: (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label style={labelStyle}>Vehicle Name / Model</label>
+                <input type="text" required value={vehicleForm.name} onChange={e => setVehicleForm({ ...vehicleForm, name: e.target.value })} placeholder="e.g. Ford Transit L2H2" style={inputStyle} />
               </div>
-
-              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowVehicleModal(false)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all border border-slate-700">
-                  Cancel
-                </button>
-                <button type="submit" className="bg-violet-600 hover:bg-violet-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all">
-                  Register Vehicle
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== ADD DRIVER MODAL ==================== */}
-      {showDriverModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl animate-scale-up">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <h3 className="text-lg font-bold text-slate-100">Register New Driver Profile</h3>
-              <button onClick={() => setShowDriverModal(false)} className="text-slate-400 hover:text-slate-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateDriver} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Driver's Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={driverForm.name} 
-                    onChange={e => setDriverForm({...driverForm, name: e.target.value})}
-                    placeholder="e.g. John Miller" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">License Number</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={driverForm.licenseNumber} 
-                    onChange={e => setDriverForm({...driverForm, licenseNumber: e.target.value})}
-                    placeholder="e.g. DL-1420190009" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">License Category</label>
-                  <input 
-                    type="text" 
-                    value={driverForm.licenseCategory} 
-                    onChange={e => setDriverForm({...driverForm, licenseCategory: e.target.value})}
-                    placeholder="e.g. Heavy Commercial" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">License Expiry Date</label>
-                  <input 
-                    type="date" 
-                    required 
-                    value={driverForm.licenseExpiryDate} 
-                    onChange={e => setDriverForm({...driverForm, licenseExpiryDate: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Contact Number</label>
-                  <input 
-                    type="text" 
-                    value={driverForm.contactNumber} 
-                    onChange={e => setDriverForm({...driverForm, contactNumber: e.target.value})}
-                    placeholder="+91 98765 43210" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Safety Score (0-100)</label>
-                  <input 
-                    type="number" 
-                    value={driverForm.safetyScore} 
-                    onChange={e => setDriverForm({...driverForm, safetyScore: e.target.value})}
-                    placeholder="100" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowDriverModal(false)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all border border-slate-700">
-                  Cancel
-                </button>
-                <button type="submit" className="bg-violet-600 hover:bg-violet-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all">
-                  Add Driver
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== PLAN TRIP MODAL ==================== */}
-      {showTripModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl animate-scale-up">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <h3 className="text-lg font-bold text-slate-100">Plan Delivery Route / Trip</h3>
-              <button onClick={() => setShowTripModal(false)} className="text-slate-400 hover:text-slate-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateTrip} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Source Location</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={tripForm.source} 
-                    onChange={e => setTripForm({...tripForm, source: e.target.value})}
-                    placeholder="e.g. Mumbai Hub" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Destination Location</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={tripForm.destination} 
-                    onChange={e => setTripForm({...tripForm, destination: e.target.value})}
-                    placeholder="e.g. Pune DC" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Select Available Vehicle</label>
-                  <select 
-                    required 
-                    value={tripForm.vehicleId} 
-                    onChange={e => setTripForm({...tripForm, vehicleId: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  >
-                    <option value="">-- Choose Vehicle --</option>
-                    {vehicles.filter((v: any) => v.status === "available").map((v: any) => (
-                      <option key={v.id} value={v.id}>{v.name} ({v.registrationNumber}) - Max: {v.maxLoadCapacity}kg</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Select Available Driver</label>
-                  <select 
-                    required 
-                    value={tripForm.driverId} 
-                    onChange={e => setTripForm({...tripForm, driverId: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  >
-                    <option value="">-- Choose Driver --</option>
-                    {drivers.filter((d: any) => d.status === "available" && new Date(d.licenseExpiryDate) > new Date()).map((d: any) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Cargo Weight (kg)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    value={tripForm.cargoWeight} 
-                    onChange={e => setTripForm({...tripForm, cargoWeight: e.target.value})}
-                    placeholder="e.g. 1500" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Planned Distance (km)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    value={tripForm.plannedDistance} 
-                    onChange={e => setTripForm({...tripForm, plannedDistance: e.target.value})}
-                    placeholder="e.g. 150" 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowTripModal(false)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all border border-slate-700">
-                  Cancel
-                </button>
-                <button type="submit" className="bg-violet-600 hover:bg-violet-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm shadow-md shadow-violet-600/20 transition-all">
-                  Save &amp; Plan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== COMPLETE TRIP MODAL ==================== */}
-      {showCompleteModal && selectedTrip && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-xl overflow-hidden shadow-2xl animate-scale-up">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Complete Trip Assignment</h3>
-                <span className="text-xs text-slate-500 font-mono mt-0.5 block">{selectedTrip.name}: {selectedTrip.source} &rarr; {selectedTrip.destination}</span>
+                <label style={labelStyle}>Registration Number</label>
+                <input type="text" required value={vehicleForm.registrationNumber} onChange={e => setVehicleForm({ ...vehicleForm, registrationNumber: e.target.value })} placeholder="e.g. MH-12-TR-9999" style={inputStyle} />
               </div>
-              <button onClick={() => {
-                setShowCompleteModal(false);
-                setSelectedTrip(null);
-              }} className="text-slate-400 hover:text-slate-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <div>
+                <label style={labelStyle}>Vehicle Type</label>
+                <select value={vehicleForm.vehicleType} onChange={e => setVehicleForm({ ...vehicleForm, vehicleType: e.target.value })} style={inputStyle}>
+                  <option value="van">Van</option><option value="truck">Truck</option><option value="bike">Bike</option><option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Max Load Capacity (kg)</label>
+                <input type="number" required value={vehicleForm.maxLoadCapacity} onChange={e => setVehicleForm({ ...vehicleForm, maxLoadCapacity: e.target.value })} placeholder="e.g. 3500" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Odometer (km)</label>
+                <input type="number" value={vehicleForm.odometer} onChange={e => setVehicleForm({ ...vehicleForm, odometer: e.target.value })} placeholder="0" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Acquisition Cost ($)</label>
+                <input type="number" value={vehicleForm.acquisitionCost} onChange={e => setVehicleForm({ ...vehicleForm, acquisitionCost: e.target.value })} placeholder="0" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Region</label>
+                <input type="text" value={vehicleForm.region} onChange={e => setVehicleForm({ ...vehicleForm, region: e.target.value })} placeholder="e.g. North Region" style={inputStyle} />
+              </div>
+            </div>
+          ),
+        },
+        {
+          show: showDriverModal,
+          title: "Register New Driver Profile",
+          onClose: () => setShowDriverModal(false),
+          onSubmit: handleCreateDriver,
+          submitLabel: "Add Driver",
+          submitColor: "#2563eb",
+          body: (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label style={labelStyle}>Driver's Name</label>
+                <input type="text" required value={driverForm.name} onChange={e => setDriverForm({ ...driverForm, name: e.target.value })} placeholder="e.g. John Miller" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>License Number</label>
+                <input type="text" required value={driverForm.licenseNumber} onChange={e => setDriverForm({ ...driverForm, licenseNumber: e.target.value })} placeholder="e.g. DL-1420190009" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>License Category</label>
+                <input type="text" value={driverForm.licenseCategory} onChange={e => setDriverForm({ ...driverForm, licenseCategory: e.target.value })} placeholder="e.g. Heavy Commercial" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>License Expiry Date</label>
+                <input type="date" required value={driverForm.licenseExpiryDate} onChange={e => setDriverForm({ ...driverForm, licenseExpiryDate: e.target.value })} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Contact Number</label>
+                <input type="text" value={driverForm.contactNumber} onChange={e => setDriverForm({ ...driverForm, contactNumber: e.target.value })} placeholder="+91 98765 43210" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Safety Score (0–100)</label>
+                <input type="number" value={driverForm.safetyScore} onChange={e => setDriverForm({ ...driverForm, safetyScore: e.target.value })} placeholder="100" style={inputStyle} />
+              </div>
+            </div>
+          ),
+        },
+        {
+          show: showTripModal,
+          title: "Plan Delivery Route / Trip",
+          onClose: () => setShowTripModal(false),
+          onSubmit: handleCreateTrip,
+          submitLabel: "Save & Plan",
+          submitColor: "#2563eb",
+          body: (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label style={labelStyle}>Source Location</label>
+                <input type="text" required value={tripForm.source} onChange={e => setTripForm({ ...tripForm, source: e.target.value })} placeholder="e.g. Mumbai Hub" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Destination Location</label>
+                <input type="text" required value={tripForm.destination} onChange={e => setTripForm({ ...tripForm, destination: e.target.value })} placeholder="e.g. Pune DC" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Select Available Vehicle</label>
+                <select required value={tripForm.vehicleId} onChange={e => setTripForm({ ...tripForm, vehicleId: e.target.value })} style={inputStyle}>
+                  <option value="">-- Choose Vehicle --</option>
+                  {vehicles.filter((v: any) => v.status === "available").map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name} ({v.registrationNumber}) – Max: {v.maxLoadCapacity}kg</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Select Available Driver</label>
+                <select required value={tripForm.driverId} onChange={e => setTripForm({ ...tripForm, driverId: e.target.value })} style={inputStyle}>
+                  <option value="">-- Choose Driver --</option>
+                  {drivers.filter((d: any) => d.status === "available" && new Date(d.licenseExpiryDate) > new Date()).map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Cargo Weight (kg)</label>
+                <input type="number" required value={tripForm.cargoWeight} onChange={e => setTripForm({ ...tripForm, cargoWeight: e.target.value })} placeholder="e.g. 1500" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Planned Distance (km)</label>
+                <input type="number" required value={tripForm.plannedDistance} onChange={e => setTripForm({ ...tripForm, plannedDistance: e.target.value })} placeholder="e.g. 150" style={inputStyle} />
+              </div>
+            </div>
+          ),
+        },
+      ].map(modal =>
+        modal.show ? (
+          <div
+            key={modal.title}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(7,14,27,0.85)", backdropFilter: "blur(8px)" }}
+          >
+            <div
+              className="w-full max-w-lg rounded-2xl overflow-hidden animate-scale-up"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-default)",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+              }}
+            >
+              {/* Modal accent line */}
+              <div style={{ height: "2px", background: "linear-gradient(90deg, #1d4ed8, #2563eb, #38bdf8, transparent)" }} />
+              <div className="flex justify-between items-center px-6 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{modal.title}</h3>
+                <button onClick={modal.onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={modal.onSubmit} className="p-6 space-y-4">
+                {modal.body}
+                <div className="flex justify-end gap-3 pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                  <button type="button" onClick={modal.onClose}
+                    style={{ padding: "9px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary"
+                    style={{ padding: "9px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, background: `linear-gradient(135deg, #1d4ed8, ${modal.submitColor})`, color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(37,99,235,0.35)" }}>
+                    {modal.submitLabel}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null
+      )}
+
+      {/* Complete Trip Modal */}
+      {showCompleteModal && selectedTrip && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(7,14,27,0.85)", backdropFilter: "blur(8px)" }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl overflow-hidden animate-scale-up"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}
+          >
+            <div style={{ height: "2px", background: "linear-gradient(90deg, #059669, #10b981, #34d399, transparent)" }} />
+            <div className="flex justify-between items-start px-6 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <div>
+                <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Complete Trip Assignment</h3>
+                <span className="text-[11px] font-mono mt-0.5 block" style={{ color: "var(--text-muted)" }}>
+                  {selectedTrip.name}: {selectedTrip.source} → {selectedTrip.destination}
+                </span>
+              </div>
+              <button onClick={() => { setShowCompleteModal(false); setSelectedTrip(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
               </button>
             </div>
-            
             <form onSubmit={handleCompleteTrip} className="p-6 space-y-4">
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Actual Distance Travelled (km)</label>
-                <input 
-                  type="number" 
-                  required 
-                  value={completionForm.actualDistance} 
-                  onChange={e => setCompletionForm({...completionForm, actualDistance: e.target.value})}
-                  placeholder={`Planned: ${selectedTrip.plannedDistance} km`} 
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                />
+                <label style={labelStyle}>Actual Distance Travelled (km)</label>
+                <input type="number" required value={completionForm.actualDistance} onChange={e => setCompletionForm({ ...completionForm, actualDistance: e.target.value })} placeholder={`Planned: ${selectedTrip.plannedDistance} km`} style={inputStyle} />
               </div>
-
               <div>
-                <label className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Fuel Consumed (Liters)</label>
-                <input 
-                  type="number" 
-                  required 
-                  value={completionForm.fuelConsumed} 
-                  onChange={e => setCompletionForm({...completionForm, fuelConsumed: e.target.value})}
-                  placeholder="e.g. 35" 
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 mt-1.5 focus:border-violet-600 focus:outline-none text-slate-100"
-                />
+                <label style={labelStyle}>Fuel Consumed (Liters)</label>
+                <input type="number" required value={completionForm.fuelConsumed} onChange={e => setCompletionForm({ ...completionForm, fuelConsumed: e.target.value })} placeholder="e.g. 35" style={inputStyle} />
               </div>
-
-              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button type="button" onClick={() => {
-                  setShowCompleteModal(false);
-                  setSelectedTrip(null);
-                }} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all border border-slate-700">
+              <div className="flex justify-end gap-3 pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                <button type="button" onClick={() => { setShowCompleteModal(false); setSelectedTrip(null); }}
+                  style={{ padding: "9px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", cursor: "pointer" }}>
                   Cancel
                 </button>
-                <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm shadow-md shadow-emerald-600/20 transition-all">
-                  Submit &amp; Close Trip
+                <button type="submit" className="btn-primary"
+                  style={{ padding: "9px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, background: "linear-gradient(135deg, #059669, #10b981)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
+                  Submit & Close Trip
                 </button>
               </div>
             </form>
