@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 export default function Home() {
   const router = useRouter();
@@ -536,7 +537,7 @@ export default function Home() {
           <div
             className="flex items-center gap-3 p-5"
             style={{
-              background: "linear-gradient(135deg, #0f1e40 0%, #0d1a36 100%)",
+              background: "var(--sidebar-brand-bg)",
               borderBottom: "1px solid var(--border-subtle)",
             }}
           >
@@ -692,6 +693,7 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <ThemeToggle />
             <button
               onClick={() => fetchData()}
               style={{
@@ -1434,14 +1436,14 @@ export default function Home() {
           <div
             key={modal.title}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(7,14,27,0.85)", backdropFilter: "blur(8px)" }}
+            style={{ background: "var(--overlay-bg)", backdropFilter: "blur(8px)" }}
           >
             <div
               className="w-full max-w-lg rounded-2xl overflow-hidden animate-scale-up"
               style={{
                 background: "var(--bg-surface)",
                 border: "1px solid var(--border-default)",
-                boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+                boxShadow: "var(--modal-shadow)",
               }}
             >
               {/* Modal accent line */}
@@ -1476,11 +1478,11 @@ export default function Home() {
       {showCompleteModal && selectedTrip && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(7,14,27,0.85)", backdropFilter: "blur(8px)" }}
+          style={{ background: "var(--overlay-bg)", backdropFilter: "blur(8px)" }}
         >
           <div
             className="w-full max-w-md rounded-2xl overflow-hidden animate-scale-up"
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", boxShadow: "var(--modal-shadow)" }}
           >
             <div style={{ height: "2px", background: "linear-gradient(90deg, #059669, #10b981, #34d399, transparent)" }} />
             <div className="flex justify-between items-start px-6 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>

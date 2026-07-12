@@ -3,6 +3,7 @@
 
 /* ============================================================
    TransitOps — Enterprise Design System
+   Dark mode is the default. Light mode overrides with [data-theme="light"]
    Primary Palette: Deep Navy + Enterprise Blue
    ============================================================ */
 
@@ -38,6 +39,48 @@
 
   /* Sidebar */
   --sidebar-width: 256px;
+
+  /* Contextual surfaces */
+  --sidebar-brand-bg:  linear-gradient(135deg, #0f1e40 0%, #0d1a36 100%);
+  --overlay-bg:        rgba(7, 14, 27, 0.85);
+  --card-shadow:       0 4px 24px rgba(0, 0, 0, 0.4);
+  --card-shadow-hover: 0 0 0 1px var(--accent-muted), 0 8px 32px rgba(0,0,0,0.4);
+  --login-card-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(37,99,235,0.08);
+  --modal-shadow:      0 24px 80px rgba(0,0,0,0.7);
+}
+
+/* ============================================================
+   Light Mode Overrides
+   ============================================================ */
+html[data-theme="light"] {
+  /* Backgrounds */
+  --bg-base:    #eef2f8;
+  --bg-surface: #ffffff;
+  --bg-elevated:#f4f7fc;
+  --bg-muted:   #e6ecf5;
+
+  /* Borders */
+  --border-subtle:  #dde5f0;
+  --border-default: #c5d0e2;
+  --border-strong:  #8fa4c4;
+
+  /* Text */
+  --text-primary:   #0c1424;
+  --text-secondary: #2c3e5a;
+  --text-muted:     #56708e;
+  --text-accent:    #1d4ed8;
+
+  /* Accent adjustments */
+  --accent-muted: rgba(37, 99, 235, 0.09);
+  --accent-glow:  rgba(37, 99, 235, 0.16);
+
+  /* Contextual surfaces */
+  --sidebar-brand-bg:  linear-gradient(135deg, #1a3a8f 0%, #2563eb 100%);
+  --overlay-bg:        rgba(15, 25, 50, 0.55);
+  --card-shadow:       0 1px 4px rgba(12,20,36,0.07), 0 4px 16px rgba(12,20,36,0.05);
+  --card-shadow-hover: 0 0 0 1px var(--accent-muted), 0 6px 24px rgba(12,20,36,0.1);
+  --login-card-shadow: 0 8px 40px rgba(12,20,36,0.12), 0 0 0 1px rgba(37,99,235,0.1);
+  --modal-shadow:      0 8px 48px rgba(12,20,36,0.2);
 }
 
 /* ============================================================
@@ -58,6 +101,26 @@ body {
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  transition: background-color 0.35s ease, color 0.25s ease;
+}
+
+/* ============================================================
+   Smooth Theme Transition
+   Applied briefly during a theme switch so every element
+   interpolates its colors rather than snapping.
+   ============================================================ */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.35s ease,
+    color            0.25s ease,
+    border-color     0.35s ease,
+    box-shadow       0.35s ease,
+    fill             0.35s ease,
+    stroke           0.35s ease !important;
+  transition-delay: 0s !important;
 }
 
 /* Text selection */
@@ -156,7 +219,7 @@ body {
 }
 .enterprise-card:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 0 0 1px var(--accent-muted), 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: var(--card-shadow-hover);
 }
 
 /* Glass morphism surface */

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export default function Login() {
   const router = useRouter();
@@ -51,6 +52,10 @@ export default function Login() {
       className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden"
       style={{ background: "var(--bg-base)" }}
     >
+      {/* Fixed theme toggle — top-right corner */}
+      <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 100 }}>
+        <ThemeToggle />
+      </div>
       {/* Animated background mesh */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -136,7 +141,7 @@ export default function Login() {
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(37,99,235,0.08)",
+            boxShadow: "var(--login-card-shadow)",
           }}
         >
           {/* Card Top Accent Line */}
