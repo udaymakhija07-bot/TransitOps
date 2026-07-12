@@ -25,10 +25,17 @@ export default function Home() {
     fleet_utilization: 0,
     recent_trips: []
   });
-  const [vehicles, setVehicles] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [trips, setTrips] = useState([]);
-  const [complianceAlerts, setComplianceAlerts] = useState([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
+  const [complianceAlerts, setComplianceAlerts] = useState<any[]>([]);
+  const [fuelLogs, setFuelLogs] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [showFuelModal, setShowFuelModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [financeSubTab, setFinanceSubTab] = useState("fuel"); // "fuel" | "expenses" | "analytics"
+  const [fuelForm, setFuelForm] = useState({ vehicleId: "", tripId: "", liters: "", cost: "", date: new Date().toISOString().split('T')[0] });
+  const [expenseForm, setExpenseForm] = useState({ vehicleId: "", expenseType: "toll", amount: "", date: new Date().toISOString().split('T')[0] });
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,8 +114,16 @@ export default function Home() {
       const kpisRes = await fetch(`${BACKEND_URL}/dashboard/kpis`, { headers });
       if (kpisRes.ok) setKpis(await kpisRes.json());
 
+      // Fetch Vehicles
       const vehRes = await fetch(`${BACKEND_URL}/vehicles`, { headers });
-      if (vehRes.ok) setVehicles(await vehRes.json());
+      if (vehRes.ok) {
+        const list = await vehRes.json();
+        setVehicles(list);
+        if (list.length > 0) {
+          setFuelForm(f => ({ ...f, vehicleId: list[0].id.toString() }));
+          setExpenseForm(e => ({ ...e, vehicleId: list[0].id.toString() }));
+        }
+      }
 
       const drvRes = await fetch(`${BACKEND_URL}/drivers`, { headers });
       if (drvRes.ok) setDrivers(await drvRes.json());
@@ -119,6 +134,17 @@ export default function Home() {
       // Fetch Compliance Alerts
       const alertsRes = await fetch(`${BACKEND_URL}/drivers/compliance-alerts`, { headers });
       if (alertsRes.ok) setComplianceAlerts(await alertsRes.json());
+
+      // Fetch Fuel Logs and Expenses (Manager & Analyst only)
+      const userStr = localStorage.getItem("transitops_user");
+      const userObj = userStr ? JSON.parse(userStr) : null;
+      if (userObj?.role === 'manager' || userObj?.role === 'analyst') {
+        const fuelRes = await fetch(`${BACKEND_URL}/fuel-logs`, { headers });
+        if (fuelRes.ok) setFuelLogs(await fuelRes.json());
+
+        const expRes = await fetch(`${BACKEND_URL}/expenses`, { headers });
+        if (expRes.ok) setExpenses(await expRes.json());
+      }
 
     } catch (err) {
       console.error(err);
@@ -178,6 +204,72 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
     showNotification("success", `CSV Exported as ${filename}`);
+  };
+
+  const handleCreateFuelLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        vehicleId: parseInt(fuelForm.vehicleId),
+        liters: parseFloat(fuelForm.liters),
+        cost: parseFloat(fuelForm.cost),
+        date: fuelForm.date,
+        tripId: fuelForm.tripId ? parseInt(fuelForm.tripId) : null
+      };
+
+      const res = await fetch(`${BACKEND_URL}/fuel-logs`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create fuel log");
+
+      showNotification("success", "Fuel log added successfully!");
+      setShowFuelModal(false);
+      setFuelForm({
+        vehicleId: vehicles[0]?.id?.toString() || "",
+        tripId: "",
+        liters: "",
+        cost: "",
+        date: new Date().toISOString().split('T')[0]
+      });
+      fetchData();
+    } catch (err: any) {
+      showNotification("error", err.message);
+    }
+  };
+
+  const handleCreateExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        vehicleId: parseInt(expenseForm.vehicleId),
+        expenseType: expenseForm.expenseType,
+        amount: parseFloat(expenseForm.amount),
+        date: expenseForm.date
+      };
+
+      const res = await fetch(`${BACKEND_URL}/expenses`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create expense");
+
+      showNotification("success", "Expense log added successfully!");
+      setShowExpenseModal(false);
+      setExpenseForm({
+        vehicleId: vehicles[0]?.id?.toString() || "",
+        expenseType: "toll",
+        amount: "",
+        date: new Date().toISOString().split('T')[0]
+      });
+      fetchData();
+    } catch (err: any) {
+      showNotification("error", err.message);
+    }
   };
 
   // Form Submissions
@@ -397,6 +489,9 @@ export default function Home() {
     if (currentUser.role === 'driver' || currentUser.role === 'dispatcher') {
       return tab === 'dashboard' || tab === 'trips';
     }
+    if (tab === 'finance') {
+      return currentUser.role === 'manager' || currentUser.role === 'analyst';
+    }
     return true;
   };
 
@@ -448,6 +543,11 @@ export default function Home() {
       id: "trips",
       label: "Trip Planner",
       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>,
+    },
+    {
+      id: "finance",
+      label: "Finance & Reports",
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>,
     },
   ];
 
@@ -1328,6 +1428,289 @@ export default function Home() {
             </div>
           )}
 
+          {activeTab === "finance" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Finance Sub-Tab Bar */}
+              <div className="flex gap-4 border-b border-[var(--border-subtle)] pb-4">
+                {[
+                  { id: "fuel", label: "Fuel Logs", count: fuelLogs.length },
+                  { id: "expenses", label: "Other Expenses", count: expenses.length },
+                  { id: "analytics", label: "Financial Analytics" }
+                ].map(subTab => (
+                  <button
+                    key={subTab.id}
+                    onClick={() => setFinanceSubTab(subTab.id)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      background: financeSubTab === subTab.id ? "var(--bg-elevated)" : "transparent",
+                      color: financeSubTab === subTab.id ? "var(--text-primary)" : "var(--text-muted)",
+                      border: "1px solid",
+                      borderColor: financeSubTab === subTab.id ? "var(--border-strong)" : "transparent",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    {subTab.label}
+                    {subTab.count !== undefined && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] rounded-full bg-[var(--bg-muted)] text-[var(--text-secondary)]">
+                        {subTab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Finance Sub-Tab Content */}
+              {financeSubTab === "fuel" && (
+                <div className="space-y-4">
+                  {/* Actions Header */}
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Fuel Consumption Directory</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleExportCSV(fuelLogs, "fuel_logs.csv")}
+                        className="btn-secondary"
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          padding: "7px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+                          background: "var(--bg-elevated)", color: "var(--text-secondary)",
+                          border: "1px solid var(--border-default)", cursor: "pointer"
+                        }}
+                      >
+                        Export CSV
+                      </button>
+                      <button
+                        onClick={() => setShowFuelModal(true)}
+                        className="btn-primary"
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          padding: "7px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+                          background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "#fff",
+                          border: "none", cursor: "pointer"
+                        }}
+                      >
+                        Log Fuel
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fuel Logs Table */}
+                  <div className="enterprise-card" style={{ borderRadius: "12px", overflow: "hidden" }}>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
+                          {["Date", "Vehicle", "Liters", "Cost", "Price/L", "Trip Reference"].map(h => (
+                            <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fuelLogs.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-5 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                              No fuel logs recorded yet.
+                            </td>
+                          </tr>
+                        ) : (
+                          fuelLogs.map((log: any) => (
+                            <tr key={log.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                              <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{new Date(log.date).toLocaleDateString()}</td>
+                              <td className="px-5 py-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{log.vehicle?.name || "N/A"}</td>
+                              <td className="px-5 py-4 text-sm font-mono" style={{ color: "var(--text-secondary)" }}>{log.liters} L</td>
+                              <td className="px-5 py-4 text-sm font-mono font-semibold" style={{ color: "var(--text-primary)" }}>${log.cost.toFixed(2)}</td>
+                              <td className="px-5 py-4 text-sm font-mono" style={{ color: "var(--text-muted)" }}>${(log.cost / log.liters).toFixed(2)}</td>
+                              <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>
+                                {log.trip ? (
+                                  <span className="font-mono text-xs px-2 py-1 rounded bg-[var(--bg-muted)] border border-[var(--border-subtle)] text-[var(--text-accent)]">
+                                    {log.trip.reference}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs italic" style={{ color: "var(--text-muted)" }}>Manual Entry</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {financeSubTab === "expenses" && (
+                <div className="space-y-4">
+                  {/* Actions Header */}
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Operational Expense Directory</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleExportCSV(expenses, "expenses.csv")}
+                        className="btn-secondary"
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          padding: "7px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+                          background: "var(--bg-elevated)", color: "var(--text-secondary)",
+                          border: "1px solid var(--border-default)", cursor: "pointer"
+                        }}
+                      >
+                        Export CSV
+                      </button>
+                      <button
+                        onClick={() => setShowExpenseModal(true)}
+                        className="btn-primary"
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          padding: "7px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+                          background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "#fff",
+                          border: "none", cursor: "pointer"
+                        }}
+                      >
+                        Log Expense
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expenses Table */}
+                  <div className="enterprise-card" style={{ borderRadius: "12px", overflow: "hidden" }}>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-subtle)" }}>
+                          {["Date", "Vehicle", "Expense Type", "Amount"].map(h => (
+                            <th key={h} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {expenses.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-5 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                              No additional expenses recorded yet.
+                            </td>
+                          </tr>
+                        ) : (
+                          expenses.map((exp: any) => (
+                            <tr key={exp.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                              <td className="px-5 py-4 text-sm" style={{ color: "var(--text-secondary)" }}>{new Date(exp.date).toLocaleDateString()}</td>
+                              <td className="px-5 py-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{exp.vehicle?.name || "N/A"}</td>
+                              <td className="px-5 py-4 text-sm capitalize" style={{ color: "var(--text-secondary)" }}>{exp.expenseType}</td>
+                              <td className="px-5 py-4 text-sm font-mono font-semibold" style={{ color: "var(--text-primary)" }}>${exp.amount.toFixed(2)}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {financeSubTab === "analytics" && (
+                <div className="space-y-6">
+                  {/* Analytics KPI cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {[
+                      {
+                        label: "Total Fuel Cost",
+                        val: `$${fuelLogs.reduce((sum: number, log: any) => sum + log.cost, 0).toFixed(2)}`,
+                        color: "#60a5fa"
+                      },
+                      {
+                        label: "Other Expenses",
+                        val: `$${expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0).toFixed(2)}`,
+                        color: "#fbbf24"
+                      },
+                      {
+                        label: "Avg Fuel Efficiency",
+                        val: (() => {
+                          const completed = trips.filter((t: any) => t.state === "completed" && t.actualDistance && t.fuelConsumed);
+                          if (completed.length === 0) return "N/A";
+                          const totalDist = completed.reduce((sum: number, t: any) => sum + t.actualDistance, 0);
+                          const totalFuel = completed.reduce((sum: number, t: any) => sum + t.fuelConsumed, 0);
+                          return `${(totalDist / totalFuel).toFixed(2)} km/L`;
+                        })(),
+                        color: "#10b981"
+                      },
+                      {
+                        label: "Average Vehicle ROI",
+                        val: `${(vehicles.reduce((sum: number, v: any) => sum + (v.roi || 0), 0) / (vehicles.length || 1)).toFixed(1)}%`,
+                        color: "#a78bfa"
+                      }
+                    ].map(card => (
+                      <div key={card.label} className="enterprise-card" style={{ padding: "20px" }}>
+                        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: card.color }} />
+                        <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{card.label}</div>
+                        <div className="text-2xl font-bold mt-2" style={{ color: card.color }}>{card.val}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* SVG Analytics Charts */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Cost Breakdown Chart */}
+                    <div className="enterprise-card" style={{ padding: "24px" }}>
+                      <h3 className="text-sm font-semibold mb-6" style={{ color: "var(--text-primary)" }}>Cost Breakdown per Vehicle</h3>
+                      <div className="space-y-4">
+                        {vehicles.slice(0, 5).map((v: any) => {
+                          const fuelCost = fuelLogs.filter((l: any) => l.vehicleId === v.id).reduce((s: number, l: any) => s + l.cost, 0);
+                          const otherCost = expenses.filter((e: any) => e.vehicleId === v.id).reduce((s: number, e: any) => s + e.amount, 0);
+                          const mainCost = v.total_operational_cost ? Math.max(0, v.total_operational_cost - fuelCost - otherCost) : 0;
+                          
+                          const total = (fuelCost + otherCost + mainCost) || 1;
+                          const fuelPct = (fuelCost / total) * 100;
+                          const otherPct = (otherCost / total) * 100;
+                          const mainPct = (mainCost / total) * 100;
+                          
+                          return (
+                            <div key={v.id} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                                <span>{v.name}</span>
+                                <span className="font-mono text-[var(--text-primary)]">${total.toFixed(2)}</span>
+                              </div>
+                              <div className="w-full h-3 rounded-full overflow-hidden flex" style={{ background: "var(--bg-elevated)" }}>
+                                <div style={{ width: `${fuelPct}%`, background: "#3b82f6" }} title={`Fuel: $${fuelCost.toFixed(2)}`} />
+                                <div style={{ width: `${mainPct}%`, background: "#10b981" }} title={`Maintenance: $${mainCost.toFixed(2)}`} />
+                                <div style={{ width: `${otherPct}%`, background: "#fbbf24" }} title={`Other: $${otherCost.toFixed(2)}`} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Fuel Efficiency Chart */}
+                    <div className="enterprise-card" style={{ padding: "24px" }}>
+                      <h3 className="text-sm font-semibold mb-6" style={{ color: "var(--text-primary)" }}>Vehicle Fuel Efficiency (km/L)</h3>
+                      <div className="space-y-4">
+                        {vehicles.slice(0, 5).map((v: any) => {
+                          const vehTrips = trips.filter((t: any) => t.vehicle?.id === v.id && t.state === "completed" && t.actualDistance && t.fuelConsumed);
+                          const dist = vehTrips.reduce((s: number, t: any) => s + t.actualDistance, 0);
+                          const fuel = vehTrips.reduce((s: number, t: any) => s + t.fuelConsumed, 0);
+                          const efficiency = fuel > 0 ? dist / fuel : 0;
+                          const maxEff = 15; // Max scale value for visualization
+                          const pct = Math.min(100, (efficiency / maxEff) * 100);
+                          
+                          return (
+                            <div key={v.id} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                                <span>{v.name}</span>
+                                <span className="font-mono" style={{ color: "#10b981" }}>{efficiency > 0 ? `${efficiency.toFixed(1)} km/L` : "No completed trips"}</span>
+                              </div>
+                              <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg, #10b981, #34d399)" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </main>
 
@@ -1459,6 +1842,85 @@ export default function Home() {
               </div>
             </div>
           ),
+        },
+        {
+          show: showFuelModal,
+          title: "Log Fuel Purchase / Consumption",
+          onClose: () => setShowFuelModal(false),
+          onSubmit: handleCreateFuelLog,
+          submitLabel: "Save Fuel Log",
+          submitColor: "#10b981",
+          body: (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label style={labelStyle}>Select Vehicle</label>
+                <select required value={fuelForm.vehicleId} onChange={e => setFuelForm({ ...fuelForm, vehicleId: e.target.value })} style={inputStyle}>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name} ({v.registrationNumber})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label style={labelStyle}>Associated Trip (Optional)</label>
+                <select value={fuelForm.tripId} onChange={e => setFuelForm({ ...fuelForm, tripId: e.target.value })} style={inputStyle}>
+                  <option value="">No Associated Trip (Manual Entry)</option>
+                  {trips.filter((t: any) => t.vehicle?.id === parseInt(fuelForm.vehicleId) && t.state === "completed").map((t: any) => (
+                    <option key={t.id} value={t.id}>{t.reference} ({t.source} → {t.destination})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Liters (L)</label>
+                <input type="number" required step="0.01" value={fuelForm.liters} onChange={e => setFuelForm({ ...fuelForm, liters: e.target.value })} placeholder="e.g. 45.5" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Total Cost ($)</label>
+                <input type="number" required step="0.01" value={fuelForm.cost} onChange={e => setFuelForm({ ...fuelForm, cost: e.target.value })} placeholder="e.g. 68.25" style={inputStyle} />
+              </div>
+              <div className="col-span-2">
+                <label style={labelStyle}>Purchase Date</label>
+                <input type="date" required value={fuelForm.date} onChange={e => setFuelForm({ ...fuelForm, date: e.target.value })} style={inputStyle} />
+              </div>
+            </div>
+          )
+        },
+        {
+          show: showExpenseModal,
+          title: "Log Fleet Expense",
+          onClose: () => setShowExpenseModal(false),
+          onSubmit: handleCreateExpense,
+          submitLabel: "Save Expense",
+          submitColor: "#fbbf24",
+          body: (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label style={labelStyle}>Select Vehicle</label>
+                <select required value={expenseForm.vehicleId} onChange={e => setExpenseForm({ ...expenseForm, vehicleId: e.target.value })} style={inputStyle}>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name} ({v.registrationNumber})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label style={labelStyle}>Expense Type</label>
+                <select required value={expenseForm.expenseType} onChange={e => setExpenseForm({ ...expenseForm, expenseType: e.target.value })} style={inputStyle}>
+                  <option value="toll">Toll</option>
+                  <option value="parking">Parking</option>
+                  <option value="insurance">Insurance</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Amount ($)</label>
+                <input type="number" required step="0.01" value={expenseForm.amount} onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })} placeholder="e.g. 15.00" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Date</label>
+                <input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({ ...expenseForm, date: e.target.value })} style={inputStyle} />
+              </div>
+            </div>
+          )
         },
       ].map(modal =>
         modal.show ? (
