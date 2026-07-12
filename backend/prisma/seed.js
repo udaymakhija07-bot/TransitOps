@@ -16,7 +16,7 @@ async function main() {
 
   // Create Users with different roles (Password: password123)
   const passwordHash = await bcrypt.hash('password123', 10);
-  
+
   await prisma.user.create({
     data: {
       email: 'manager@transitops.com',
@@ -28,10 +28,10 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      email: 'driver@transitops.com',
+      email: 'dispatcher@transitops.com',
       password: passwordHash,
-      role: 'driver',
-      name: 'Amit Singh'
+      role: 'dispatcher',
+      name: 'Dispatcher'
     }
   });
 
@@ -146,7 +146,7 @@ async function main() {
       name: 'Rajesh Kumar',
       licenseNumber: 'DL-1420190001',
       licenseCategory: 'Heavy Commercial (HCV)',
-      licenseExpiryDate: new Date(Date.now() + 1000*60*60*24*365*2), // 2 years
+      licenseExpiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 2), // 2 years
       contactNumber: '+91 98765 43210',
       safetyScore: 94.5,
       status: 'available',
@@ -158,7 +158,7 @@ async function main() {
       name: 'Amit Singh',
       licenseNumber: 'DL-1420190002',
       licenseCategory: 'Light Commercial (LCV)',
-      licenseExpiryDate: new Date(Date.now() + 1000*60*60*24*365), // 1 year
+      licenseExpiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365), // 1 year
       contactNumber: '+91 98765 43211',
       safetyScore: 88.0,
       status: 'on_trip',
@@ -170,7 +170,7 @@ async function main() {
       name: 'John Miller (Expiring License)',
       licenseNumber: 'DL-1420190003',
       licenseCategory: 'Commercial Vehicle',
-      licenseExpiryDate: new Date(Date.now() + 1000*60*60*24*10), // 10 days
+      licenseExpiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10), // 10 days
       contactNumber: '+91 98765 43212',
       safetyScore: 92.0,
       status: 'available',
@@ -182,7 +182,7 @@ async function main() {
       name: 'Devendra Patil (Suspended)',
       licenseNumber: 'DL-1420190004',
       licenseCategory: 'Heavy Transport',
-      licenseExpiryDate: new Date(Date.now() + 1000*60*60*24*365*3), // 3 years
+      licenseExpiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 3), // 3 years
       contactNumber: '+91 98765 43213',
       safetyScore: 45.0,
       status: 'suspended',
@@ -194,7 +194,7 @@ async function main() {
       name: 'Vikram Rathore',
       licenseNumber: 'DL-1420190005',
       licenseCategory: 'Light Motor Vehicle',
-      licenseExpiryDate: new Date(Date.now() + 1000*60*60*24*180), // 6 months
+      licenseExpiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 180), // 6 months
       contactNumber: '+91 98765 43214',
       safetyScore: 99.0,
       status: 'off_duty',
@@ -214,8 +214,8 @@ async function main() {
       actualDistance: 152.0,
       fuelConsumed: 38.0,
       state: 'completed',
-      dispatchDate: new Date(Date.now() - 1000*60*60*24*2),
-      completionDate: new Date(Date.now() - 1000*60*60*24*2 + 1000*60*60*4),
+      dispatchDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+      completionDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2 + 1000 * 60 * 60 * 4),
     }
   });
 
@@ -278,7 +278,7 @@ async function main() {
       tripId: tCompleted.id,
       liters: 38.0,
       cost: 57.0,
-      date: new Date(Date.now() - 1000*60*60*24*2),
+      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
     }
   });
 
@@ -297,7 +297,7 @@ async function main() {
       vehicleId: v1.id,
       expenseType: 'toll',
       amount: 25.0,
-      date: new Date(Date.now() - 1000*60*60*24*2),
+      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
     }
   });
 

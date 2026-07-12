@@ -94,7 +94,7 @@ At the login screen (`http://localhost:3000/login`), you can log in as any of th
 | Role | Email | Password |
 |---|---|---|
 | **Fleet Manager** | `manager@transitops.com` | `password123` |
-| **Driver** | `driver@transitops.com` | `password123` |
+| **Dispatcher** | `driver@transitops.com` | `password123` |
 | **Safety Officer** | `safety@transitops.com` | `password123` |
 | **Financial Analyst** | `analyst@transitops.com` | `password123` |
 
@@ -108,3 +108,5 @@ At the login screen (`http://localhost:3000/login`), you can log in as any of th
 2. Restart your Odoo server.
 3. Enable **Developer Mode** in Odoo.
 4. Go to **Apps**, click **Update Apps List**, search for `transit_ops`, and click **Activate**.
+
+*******
