@@ -10,7 +10,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const BACKEND_URL = "http://localhost:5000/api/auth";
+  const BACKEND_URL = "http://localhost:5005/api/auth";
 
   const handleLogin = async (e: React.FormEvent, customEmail?: string, customPassword?: string) => {
     if (e) e.preventDefault();
@@ -55,7 +55,7 @@ export default function Login() {
         {/* Logo */}
         <div className="flex justify-center items-center gap-3">
           <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-3 rounded-xl shadow-lg shadow-violet-600/30">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-1-1h-7m7 5H3"/></svg>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-1-1h-7m7 5H3" /></svg>
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-100 uppercase tracking-wide">
@@ -68,10 +68,10 @@ export default function Login() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-slate-900 border border-slate-800 py-8 px-4 shadow-2xl rounded-xl sm:px-10">
-          
+
           {errorMsg && (
             <div className="mb-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
               <span>{errorMsg}</span>
             </div>
           )}
@@ -137,8 +137,8 @@ export default function Login() {
                 onClick={() => handleDemoLogin("driver@transitops.com")}
                 className="bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/40 text-emerald-400 p-2.5 rounded-lg text-left transition-all"
               >
-                Driver Role
-                <span className="block text-[10px] text-slate-500 mt-0.5">driver@transitops.com</span>
+                Dispatcher
+                <span className="block text-[10px] text-slate-500 mt-0.5">dispatcher@transitops.com</span>
               </button>
               <button
                 onClick={() => handleDemoLogin("safety@transitops.com")}

@@ -28,6 +28,11 @@ export default function Home() {
   const [drivers, setDrivers] = useState([]);
   const [trips, setTrips] = useState([]);
 
+  // Search & Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
   // Modals States
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
@@ -69,7 +74,7 @@ export default function Home() {
     fuelConsumed: ""
   });
 
-  const BACKEND_URL = "http://localhost:5000/api";
+  const BACKEND_URL = "http://localhost:5005/api";
 
   const showNotification = (type: "success" | "error", message: string) => {
     if (type === "success") {
@@ -115,7 +120,7 @@ export default function Home() {
 
     } catch (err) {
       console.error(err);
-      showNotification("error", "Could not connect to backend server. Make sure the API server is running on port 5000.");
+      showNotification("error", "Could not connect to backend server. Make sure the API server is running on port 5005.");
     } finally {
       setLoading(false);
     }
@@ -140,6 +145,39 @@ export default function Home() {
     localStorage.removeItem("transitops_token");
     localStorage.removeItem("transitops_user");
     router.push("/login");
+  };
+
+  // CSV Export Utility
+  const handleExportCSV = (data: any[], filename: string) => {
+    if (data.length === 0) {
+      showNotification("error", "No data available to export.");
+      return;
+    }
+    
+    // Create clean rows by omitting relational object arrays
+    const cleanData = data.map(({ trips, maintenanceLogs, fuelLogs, expenses, vehicle, driver, ...rest }) => ({
+      ...rest,
+      vehicleName: vehicle ? vehicle.name : undefined,
+      driverName: driver ? driver.name : undefined
+    }));
+
+    const headers = Object.keys(cleanData[0]).join(",");
+    const rows = cleanData.map(row => 
+      Object.values(row).map(value => {
+        const str = value === null || value === undefined ? "" : String(value).replace(/"/g, '""');
+        return str.includes(",") || str.includes("\n") ? `"${str}"` : str;
+      }).join(",")
+    );
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification("success", `CSV Exported as ${filename}`);
   };
 
   // Form Submissions
@@ -317,6 +355,47 @@ export default function Home() {
     }
   };
 
+  // Reset local search filters on tab switch
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchQuery("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+  };
+
+  // Client-side search filters logic
+  const getFilteredVehicles = () => {
+    return vehicles.filter((v: any) => {
+      const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            v.registrationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (v.region && v.region.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === "all" || v.status === statusFilter;
+      const matchesType = typeFilter === "all" || v.vehicleType === typeFilter;
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  };
+
+  const getFilteredDrivers = () => {
+    return drivers.filter((d: any) => {
+      const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || d.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  };
+
+  const getFilteredTrips = () => {
+    return trips.filter((t: any) => {
+      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            t.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (t.vehicle?.name && t.vehicle.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            (t.driver?.name && t.driver.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === "all" || t.state === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  };
+
   if (!currentUser) {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading Session...</div>;
   }
@@ -328,6 +407,13 @@ export default function Home() {
     }
     return true;
   };
+
+  // Chart data calculations
+  const totalVehiclesCount = vehicles.length;
+  const availableCount = vehicles.filter((v: any) => v.status === "available").length;
+  const onTripCount = vehicles.filter((v: any) => v.status === "on_trip").length;
+  const inShopCount = vehicles.filter((v: any) => v.status === "in_shop").length;
+  const retiredCount = vehicles.filter((v: any) => v.status === "retired").length;
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
@@ -358,7 +444,7 @@ export default function Home() {
           {/* Navigation Links */}
           <nav className="p-4 space-y-1">
             <button
-              onClick={() => setActiveTab("dashboard")}
+              onClick={() => handleTabChange("dashboard")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "dashboard" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
@@ -366,7 +452,7 @@ export default function Home() {
             </button>
             {isTabAllowed("vehicles") && (
               <button
-                onClick={() => setActiveTab("vehicles")}
+                onClick={() => handleTabChange("vehicles")}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "vehicles" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3m14 0V9a2 2 0 00-2-2h-2M5 16V9a2 2 0 012-2h2m10 9a2 2 0 01-2 2H7a2 2 0 01-2-2m14-5V7a2 2 0 00-2-2h-2M5 9V7a2 2 0 012-2h2m0 0V2h6v3M9 7h6"/></svg>
@@ -375,7 +461,7 @@ export default function Home() {
             )}
             {isTabAllowed("drivers") && (
               <button
-                onClick={() => setActiveTab("drivers")}
+                onClick={() => handleTabChange("drivers")}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "drivers" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -384,7 +470,7 @@ export default function Home() {
             )}
             {isTabAllowed("trips") && (
               <button
-                onClick={() => setActiveTab("trips")}
+                onClick={() => handleTabChange("trips")}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${activeTab === "trips" ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
@@ -431,6 +517,33 @@ export default function Home() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2M4 9h5v5"/></svg>
               Sync Data
             </button>
+            
+            {/* CSV EXPORT BUTTONS */}
+            {activeTab === "vehicles" && (
+              <button 
+                onClick={() => handleExportCSV(vehicles, "vehicles_registry.csv")}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+              >
+                Export CSV
+              </button>
+            )}
+            {activeTab === "drivers" && (
+              <button 
+                onClick={() => handleExportCSV(drivers, "drivers_directory.csv")}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+              >
+                Export CSV
+              </button>
+            )}
+            {activeTab === "trips" && (
+              <button 
+                onClick={() => handleExportCSV(trips, "trips_logs.csv")}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+              >
+                Export CSV
+              </button>
+            )}
+
             {currentUser.role !== 'driver' && currentUser.role !== 'safety' && currentUser.role !== 'analyst' && (
               <button 
                 onClick={() => {
@@ -516,6 +629,86 @@ export default function Home() {
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
                     <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase block">Planned Draft Trips</span>
                     <div className="text-4xl font-extrabold text-slate-400 mt-4">{kpis.pending_trips}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* CHARTS SECTION (Only for Managers and Analysts) */}
+              {currentUser.role !== 'driver' && currentUser.role !== 'safety' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Chart 1: Vehicle Status Distribution (SVG Circular Donut Chart) */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h3 className="text-lg font-bold text-slate-200 mb-6">Vehicle Status Distribution</h3>
+                    <div className="flex items-center justify-around gap-6">
+                      <div className="relative w-40 h-40">
+                        {/* Inline custom SVG Donut representing dynamic fractions */}
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1e293b" strokeWidth="3"/>
+                          {/* Available fraction (Green) */}
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="3.2" 
+                            strokeDasharray={`${totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0)}`}
+                            strokeDashoffset="0"
+                          />
+                          {/* On Trip fraction (Sky Blue) */}
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#0ea5e9" strokeWidth="3.2" 
+                            strokeDasharray={`${totalVehiclesCount > 0 ? (onTripCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (onTripCount / totalVehiclesCount) * 100 : 0)}`}
+                            strokeDashoffset={`-${totalVehiclesCount > 0 ? (availableCount / totalVehiclesCount) * 100 : 0}`}
+                          />
+                          {/* In Shop fraction (Amber) */}
+                          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="3.2" 
+                            strokeDasharray={`${totalVehiclesCount > 0 ? (inShopCount / totalVehiclesCount) * 100 : 0} ${100 - (totalVehiclesCount > 0 ? (inShopCount / totalVehiclesCount) * 100 : 0)}`}
+                            strokeDashoffset={`-${totalVehiclesCount > 0 ? ((availableCount + onTripCount) / totalVehiclesCount) * 100 : 0}`}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl font-extrabold text-slate-100">{totalVehiclesCount}</span>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Vehicles</span>
+                        </div>
+                      </div>
+
+                      {/* Legend details */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500"/>
+                          <span className="text-sm font-medium text-slate-300">Available: <strong>{availableCount}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-sky-500"/>
+                          <span className="text-sm font-medium text-slate-300">On Trip: <strong>{onTripCount}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-amber-500"/>
+                          <span className="text-sm font-medium text-slate-300">In Shop: <strong>{inShopCount}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-slate-600"/>
+                          <span className="text-sm font-medium text-slate-300">Retired: <strong>{retiredCount}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chart 2: Operational Cost per Vehicle (Custom Bar Chart Layout) */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h3 className="text-lg font-bold text-slate-200 mb-6">Operational Cost per Vehicle</h3>
+                    <div className="space-y-4">
+                      {vehicles.slice(0, 5).map((v: any) => {
+                        const cost = v.total_operational_cost || 0;
+                        const maxCost = Math.max(...vehicles.map((veh: any) => veh.total_operational_cost || 0), 100);
+                        const percentage = (cost / maxCost) * 100;
+                        return (
+                          <div key={v.id} className="space-y-1">
+                            <div className="flex justify-between text-sm font-medium text-slate-300">
+                              <span>{v.name}</span>
+                              <span className="font-mono text-violet-400 font-bold">${cost.toFixed(2)}</span>
+                            </div>
+                            <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800/80">
+                              <div className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}/>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
@@ -619,8 +812,48 @@ export default function Home() {
           {/* TAB 2: VEHICLES */}
           {activeTab === "vehicles" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Search & Filter Header */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap gap-4 items-center">
+                <div className="flex-1 min-w-[200px]">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by vehicle name, registration number, or region..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  />
+                </div>
+                <div className="w-48">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="available">Available</option>
+                    <option value="on_trip">On Trip</option>
+                    <option value="in_shop">In Shop</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </div>
+                <div className="w-48">
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="van">Van</option>
+                    <option value="truck">Truck</option>
+                    <option value="bike">Bike</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Grid Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {vehicles.map((v: any) => (
+                {getFilteredVehicles().map((v: any) => (
                   <div key={v.id} className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all">
                     <div>
                       <div className="flex justify-between items-start mb-4">
@@ -682,6 +915,32 @@ export default function Home() {
           {/* TAB 3: DRIVERS */}
           {activeTab === "drivers" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Search & Filter Header */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex gap-4 items-center">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by driver name or license number..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  />
+                </div>
+                <div className="w-48">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="available">Available</option>
+                    <option value="on_trip">On Trip</option>
+                    <option value="off_duty">Off Duty</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
@@ -698,7 +957,7 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
-                      {drivers.map((d: any) => (
+                      {getFilteredDrivers().map((d: any) => (
                         <tr key={d.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="px-6 py-4 font-semibold text-slate-100">{d.name}</td>
                           <td className="px-6 py-4 font-mono">{d.licenseNumber}</td>
@@ -753,6 +1012,32 @@ export default function Home() {
           {/* TAB 4: TRIPS */}
           {activeTab === "trips" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Search & Filter Header */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex gap-4 items-center">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by trip reference, route source/destination, driver or vehicle name..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  />
+                </div>
+                <div className="w-48">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:border-violet-600 focus:outline-none text-slate-100 text-sm"
+                  >
+                    <option value="all">All States</option>
+                    <option value="draft">Draft</option>
+                    <option value="dispatched">Dispatched</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
@@ -770,7 +1055,7 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
-                      {trips.map((trip: any) => (
+                      {getFilteredTrips().map((trip: any) => (
                         <tr key={trip.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="px-6 py-4 font-mono font-bold text-slate-100">{trip.name}</td>
                           <td className="px-6 py-4">
