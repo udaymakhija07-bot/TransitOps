@@ -196,6 +196,37 @@ router.delete('/vehicles/:id', async (req, res) => {
 });
 
 // ==================== DRIVERS ====================
+router.get('/drivers/compliance-alerts', async (req, res) => {
+  try {
+    const today = new Date();
+    const fifteenDaysFromNow = new Date();
+    fifteenDaysFromNow.setDate(today.getDate() + 15);
+
+    const expiringDrivers = await prisma.driver.findMany({
+      where: {
+        licenseExpiryDate: {
+          lte: fifteenDaysFromNow,
+          gte: today
+        }
+      }
+    });
+
+    const emailLogs = expiringDrivers.map(d => ({
+      id: d.id,
+      driverName: d.name,
+      licenseNumber: d.licenseNumber,
+      expiryDate: d.licenseExpiryDate,
+      emailSentTo: 'safety@transitops.com',
+      subject: `Compliance Alert: Driver ${d.name} License Expiring Soon`,
+      timestamp: new Date()
+    }));
+
+    res.json(emailLogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch compliance alerts.' });
+  }
+});
+
 router.get('/drivers', async (req, res) => {
   try {
     const drivers = await prisma.driver.findMany();

@@ -67,6 +67,7 @@ class TransitOpsDriver(models.Model):
             safety_officers = self.env.ref('base.group_system').users
 
         activity_type = self.env.ref('mail.mail_activity_data_todo')
+        template = self.env.ref('transit_ops.email_template_driver_license_expiry', raise_if_not_found=False)
 
         for driver in drivers:
             # Check if there is already an active activity for this driver regarding license renewal
@@ -89,4 +90,10 @@ class TransitOpsDriver(models.Model):
                     'date_deadline': driver.license_expiry_date,
                     'user_id': officer.id,
                 })
+                # Send compliance alert email
+                try:
+                    if officer.email and template:
+                        template.send_mail(driver.id, force_send=True, email_values={'email_to': officer.email})
+                except Exception:
+                    pass
 

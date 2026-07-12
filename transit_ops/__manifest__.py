@@ -20,6 +20,7 @@ and real-time operations dashboards.
         'security/security_groups.xml',
         'security/ir.model.access.csv',
         'security/record_rules.xml',
+        'data/mail_template_data.xml',
         'data/sequence_data.xml',
         'data/ir_cron_data.xml',
         'views/vehicle_views.xml',

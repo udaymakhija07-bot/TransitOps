@@ -27,6 +27,7 @@ export default function Home() {
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [trips, setTrips] = useState([]);
+  const [complianceAlerts, setComplianceAlerts] = useState([]);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,6 +118,10 @@ export default function Home() {
       // Fetch Trips
       const tripRes = await fetch(`${BACKEND_URL}/trips`, { headers });
       if (tripRes.ok) setTrips(await tripRes.json());
+
+      // Fetch Compliance Alerts
+      const alertsRes = await fetch(`${BACKEND_URL}/drivers/compliance-alerts`, { headers });
+      if (alertsRes.ok) setComplianceAlerts(await alertsRes.json());
 
     } catch (err) {
       console.error(err);
@@ -571,6 +576,33 @@ export default function Home() {
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-8">
+          
+          {/* Compliance Expiry Alert Banner */}
+          {complianceAlerts.length > 0 && (currentUser.role === 'manager' || currentUser.role === 'safety') && (
+            <div className="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center justify-between gap-4 shadow-lg shadow-amber-500/5 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-500/20 p-2 rounded-lg text-amber-500">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div>
+                  <h4 className="font-bold text-amber-400">Driver License Compliance Alert</h4>
+                  <p className="text-slate-300 text-sm mt-0.5">
+                    We detected <strong>{complianceAlerts.length} driver(s)</strong> whose license is expiring within the next 15 days. Simulated alert email(s) have been successfully sent to the Safety Officer (`safety@transitops.com`).
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setActiveTab("drivers");
+                  setStatusFilter("all");
+                  setSearchQuery("Expiring");
+                }}
+                className="shrink-0 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition-all"
+              >
+                Resolve Alerts
+              </button>
+            </div>
+          )}
           
           {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (
