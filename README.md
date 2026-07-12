@@ -108,3 +108,5 @@ At the login screen (`http://localhost:3000/login`), you can log in as any of th
 2. Restart your Odoo server.
 3. Enable **Developer Mode** in Odoo.
 4. Go to **Apps**, click **Update Apps List**, search for `transit_ops`, and click **Activate**.
+
+*******
