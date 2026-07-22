@@ -83,7 +83,9 @@ export default function Home() {
     fuelConsumed: ""
   });
 
-  const BACKEND_URL = "http://localhost:5005/api";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+    ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`
+    : "http://localhost:5005/api";
 
   const showNotification = (type: "success" | "error", message: string) => {
     if (type === "success") {

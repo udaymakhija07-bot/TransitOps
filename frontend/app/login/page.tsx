@@ -11,7 +11,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const BACKEND_URL = "http://localhost:5005/api/auth";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+    ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth`
+    : "http://localhost:5005/api/auth";
 
   const handleLogin = async (e: React.FormEvent, customEmail?: string, customPassword?: string) => {
     if (e) e.preventDefault();
